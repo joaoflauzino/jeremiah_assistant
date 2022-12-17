@@ -46,7 +46,7 @@ def register(data: Register):
     return f"Register was created: {rsp}"
 
 
-@app.put("/update", status_code=status.HTTP_201_CREATED)
+@app.put("/budget/update", status_code=status.HTTP_201_CREATED)
 def update(data: Register):
     data_transformed = jsonable_encoder(data)
     register = DataBaseOperations()
@@ -54,7 +54,7 @@ def update(data: Register):
     return rsp
 
 
-@app.delete("/budget/category/delete", status_code=status.HTTP_200_OK)
+@app.delete("/budget/delete", status_code=status.HTTP_200_OK)
 def delete(data: Delete):
     register = DataBaseOperations()
     data_transformed = jsonable_encoder(data)
