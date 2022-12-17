@@ -23,7 +23,7 @@ def root():
     return {"message": "It is working!"}
 
 
-@app.get("/budget/", status.HTTP_200_OK)
+@app.get("/budget/", status_code=status.HTTP_200_OK)
 def read_budget(items: Union[List[int], None] = Query(default=[1])):
     register = DataBaseOperations()
     response = register.get_instance(items, DimensionFinanceTable)
