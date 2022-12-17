@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 
+
 # Schema to Register and Update
 class Register(BaseModel):
     category_id: int

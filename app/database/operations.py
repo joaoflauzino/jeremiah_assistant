@@ -74,7 +74,8 @@ class DataBaseOperations(object):
             register (dict): A dict with category and subcategory id
             TableObject (object): SqlAlchemy table object
         Return:
-            (str): returns a message showing which category and subcategory were deleted.
+            (str): returns a message showing which
+            category and subcategory were deleted.
         """
         found_register = self.session.query(TableObject).get(register)
         if found_register:
