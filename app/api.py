@@ -23,7 +23,7 @@ def root():
     return {"message": "It is working!"}
 
 
-@app.get("/budget/")
+@app.get("/budget/", status.HTTP_200_OK)
 def read_budget(items: Union[List[int], None] = Query(default=[1])):
     register = DataBaseOperations()
     response = register.get_instance(items, DimensionFinanceTable)
@@ -46,7 +46,7 @@ def register(data: Register):
     return f"Register was created: {response}"
 
 
-@app.put("/update")
+@app.put("/update", status_code=status.HTTP_201_CREATED)
 def update(data: Register):
     data_transformed = jsonable_encoder(data)
     register = DataBaseOperations()
@@ -54,7 +54,7 @@ def update(data: Register):
     return response
 
 
-@app.delete("/budget/category/delete")
+@app.delete("/budget/category/delete", status_code=status.HTTP_200_OK)
 def delete(data: Delete):
     register = DataBaseOperations()
     data_transformed = jsonable_encoder(data)
