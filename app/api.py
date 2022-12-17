@@ -1,12 +1,18 @@
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, Query
 import uvicorn
 
-from database import create_engine
+from database import register_engine
 
-from validation_schema.validate import Register, Delete, ListRegister
+from fastapi.encoders import jsonable_encoder
+from typing import List, Union
 
-# Creating database engine
-create_engine.create_database_engine()
+from validation_schema.validate import Register, Delete
+
+from database.operations import DataBaseOperations
+from database.register_engine import DimensionFinanceTable
+
+
+register_engine.create_database_engine()
 
 # FastAPI app
 app = FastAPI()
@@ -14,28 +20,46 @@ app = FastAPI()
 
 @app.get("/health")
 def root():
-    return {"message": "Hello World"}
+    return {"message": "It is working!"}
 
 
-@app.get("/report")
-def report():
-    return {}
+@app.get("/budget/")
+def read_budget(items: Union[List[int], None] = Query(default=[1])):
+    register = DataBaseOperations()
+    response = register.get_instance(items, DimensionFinanceTable)
+    return response
 
 
-@app.post("/register", status_code=status.HTTP_201_CREATED)
-def register(register: ListRegister):
-    registers = [dict(element) for element in register.registers]
-    return f" These registers was reiceved: {registers}"
+@app.post("/budget/register", status_code=status.HTTP_201_CREATED)
+def register(data: Register):
+    data_transformed = jsonable_encoder(data)
+
+    dimension_finance_table_instance = DimensionFinanceTable(
+        category_id=data_transformed.get("category_id"),
+        category_name=data_transformed.get("category_name"),
+        budget_type=data_transformed.get("budget_type"),
+        budget=data_transformed.get("budget"),
+    )
+
+    register = DataBaseOperations()
+    response = register.create_instance(dimension_finance_table_instance)
+    return f"Register was created: {response}"
 
 
 @app.put("/update")
-def update(update: Register):
-    return {}
+def update(data: Register):
+    data_transformed = jsonable_encoder(data)
+    register = DataBaseOperations()
+    response = register.update_instance(data_transformed, DimensionFinanceTable)
+    return response
 
 
-@app.delete("/delete")
-def delete(delete: Delete):
-    return {}
+@app.delete("/budget/category/delete")
+def delete(data: Delete):
+    register = DataBaseOperations()
+    data_transformed = jsonable_encoder(data)
+    response = register.delete_instance(data_transformed, DimensionFinanceTable)
+    return f" These registers were deleted: {response}"
 
 
 if __name__ == "__main__":
