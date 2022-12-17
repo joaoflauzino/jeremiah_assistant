@@ -52,12 +52,20 @@ class DataBaseOperations(object):
         Return:
             (str): A message showing the updated register
         """
-        self.session.query(TableObject).filter(
+        query = self.session.query(TableObject).filter(
             TableObject.category_id == data.get("category_id")
-        ).update(data, synchronize_session=False)
-        self.session.commit()
-        self.session.close()
-        return f"Your budget was updated: {data}"
+        )
+
+        if query.all():
+            query.update(data, synchronize_session=False)
+            self.session.commit()
+            self.session.close()
+            return f"Your budget was updated: {data}"
+
+        raise HTTPException(
+            status_code=404,
+            detail=f"category id {data.get('category_id')} not found",
+        )
 
     def delete_instance(self, register: dict, TableObject: object) -> str:
         """
