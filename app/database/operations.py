@@ -19,7 +19,7 @@ class DataBaseOperations(object):
         self.session.commit()
         self.session.close()
 
-        return f"A budget was created. Category: {TableObject.category_id}"
+        return f"A instance was created. Category: {TableObject.category_id}"
 
     def get_instance(self, items: list, TableObject: object) -> list:
         """
