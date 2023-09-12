@@ -132,4 +132,4 @@ dmypy.json
 *.db
 
 # token
-app/config.py
+app/config/config.py
