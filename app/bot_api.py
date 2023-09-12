@@ -29,11 +29,6 @@ logger = logging.getLogger(__name__)
 
 url = "http://localhost:5000"
 
-options_finance = {
-    "cadastrar limite de gastos": "dimension/budget/register",
-    "consultar limite de gastos": "dimension/budget/",
-}
-
 d_category_name = {
     "Comida - Final de Semana": 1,
     "Mercado": 2,
@@ -41,9 +36,6 @@ d_category_name = {
     "Sacolão": 4,
     "Outros": 5,
 }
-
-
-# options_finance_actions = {"cadastrar limite de gastos": GET_CATEGORY}
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -147,7 +139,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == "__main__":
-    application = ApplicationBuilder().token(config.TOKEN).build()
+    application = ApplicationBuilder().token(config.TOKEN_TELEGRAM).build()
 
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.TEXT & (~filters.COMMAND), conversation)],

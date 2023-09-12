@@ -130,3 +130,6 @@ dmypy.json
 
 # database
 *.db
+
+# token
+app/config.py
