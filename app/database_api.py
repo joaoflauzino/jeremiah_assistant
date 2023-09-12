@@ -31,11 +31,12 @@ def root():
     return {"message": "It is working!"}
 
 
-@app.get("/dimension/budget/", status_code=status.HTTP_200_OK)
+@app.get("/dimension/budget", status_code=status.HTTP_200_OK)
+# trunk-ignore(ruff/B008)
 def read_budget(items: Union[List[int], None] = Query(default=[1])):
     register = DataBaseOperations()
     rsp = register.get_instance(items, DimensionFinanceTable)
-    return rsp
+    return rsp[0]
 
 
 @app.post("/dimension/budget/register", status_code=status.HTTP_201_CREATED)
@@ -115,4 +116,4 @@ def delete(data: DeleteTransaction):
 
 
 if __name__ == "__main__":
-    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=True, workers=1)
+    uvicorn.run("database_api:app", host="0.0.0.0", port=8000, reload=True, workers=1)

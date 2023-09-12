@@ -1,5 +1,8 @@
 api:
-	cd app; python api.py
+	cd app; python bot_api.py
+
+database_api:
+	cd app; python database_api.py
 
 lint:
 	black app/
