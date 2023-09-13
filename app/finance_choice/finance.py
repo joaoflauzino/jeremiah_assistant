@@ -60,7 +60,7 @@ class Finance(object):
         response = requests.get(
             url=f"{url}/dimension/budget", params={"items": item}, timeout=500
         )
-        return response.text
+        return response
 
     def set_board(self) -> None:
         """

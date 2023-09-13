@@ -20,12 +20,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 (
-    FINANCE_CHOICE,
     EXECUTE_CHOICE,
     GET_CATEGORY,
     GET_AMOUNT,
     REGISTER_BUDGET,
-) = range(5)
+) = range(4)
 
 url = "http://localhost:5000"
 
@@ -38,23 +37,11 @@ d_category_name = {
 }
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def options(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
-        chat_id=update.effective_chat.id, text="Olá, sou seu assistente virtual!"
+        chat_id=update.effective_chat.id,
+        text="Olá, sou seu assistente virtual! Clique em dos itens que necessita de ajuda: \n\n /gastos -> Consulta e Registros dos limites e gastos mensais",
     )
-
-
-async def conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reply_keyboard = [["financeiro", "filmes"], ["compromissos", "compras"], ["outros"]]
-    await update.message.reply_text(
-        "Olá, escolha um dos itens abaixo para que eu possa te ajudar:",
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard,
-            one_time_keyboard=True,
-        ),
-    )
-
-    return FINANCE_CHOICE
 
 
 async def finance_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,7 +51,7 @@ async def finance_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ["atualizar gastos"],
     ]
     await update.message.reply_text(
-        "Ok. Sobre o assunto 'Financeiro', o que você gostaria de fazer?",
+        "Ok. Sobre o assunto 'Gastos', o que você gostaria de fazer?",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard,
             one_time_keyboard=True,
@@ -100,10 +87,22 @@ async def get_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if budget["action"] == "consultar limite de gastos":
         response = finance.get_budget_database(budget["category_id"])
-        response_dict = json.loads(response)
+
+        if response.status_code == 404:
+            await update.message.reply_text(
+                f'Categoria "{budget.get("category_name")}" ainda não foi cadastrada!',
+            )
+
+            return ConversationHandler.END
+
+        response_dict = json.loads(response.text)
+
         await update.message.reply_text(
             f'O limite para "{budget.get("category_name")}" é R${response_dict.get("budget")}!',
         )
+
+        return ConversationHandler.END
+
     elif budget["action"] == "cadastrar limite de gastos":
         await update.message.reply_text(
             "Qual o limite de gastos?",
@@ -138,15 +137,29 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
+async def not_implemented_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    import pdb
+
+    pdb.set_trace()
+    await update.message.reply_text(
+        "Esse item ainda não foi implementado.", reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
+
+
 if __name__ == "__main__":
     application = ApplicationBuilder().token(config.TOKEN_TELEGRAM).build()
 
-    conv_handler = ConversationHandler(
-        entry_points=[MessageHandler(filters.TEXT & (~filters.COMMAND), conversation)],
+    options_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.TEXT & (~filters.COMMAND), options)],
+        states={},
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+
+    finance_handler = ConversationHandler(
+        entry_points=[CommandHandler("gastos", finance_choice)],
         states={
-            FINANCE_CHOICE: [
-                MessageHandler(filters.TEXT & (~filters.COMMAND), finance_choice)
-            ],
             EXECUTE_CHOICE: [
                 MessageHandler(filters.TEXT & (~filters.COMMAND), get_category)
             ],
@@ -158,6 +171,8 @@ if __name__ == "__main__":
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 
-    application.add_handler(conv_handler)
+    application.add_handler(finance_handler)
+
+    application.add_handler(options_handler)
 
     application.run_polling()
