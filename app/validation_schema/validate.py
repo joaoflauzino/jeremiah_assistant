@@ -36,7 +36,6 @@ class RegisterUpdateTransaction(BaseModel):
     transaction_id: int
     category_id: int
     amount: float
-    datetime_transaction: datetime
 
 
 class DeleteTransaction(BaseModel):

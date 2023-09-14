@@ -51,7 +51,7 @@ class DataBaseOperations(object):
 
         raise HTTPException(
             status_code=404,
-            detail=f"Categories {items} were not found",
+            detail=f"Categories or transactions {items} were not found",
         )
 
     # trunk-ignore(ruff/D417)
@@ -68,19 +68,28 @@ class DataBaseOperations(object):
         ------
             (str): A message showing the updated register.
         """
-        query = self.session.query(TableObject).filter(
-            TableObject.category_id == data.get("category_id")
-        )
+
+        key = "category_id"
+
+        if "transaction_id" in data:
+            query = self.session.query(TableObject).filter(
+                TableObject.transaction_id == data.get("transaction_id")
+            )
+
+        elif "category_id" in data:
+            query = self.session.query(TableObject).filter(
+                TableObject.category_id == data.get("category_id")
+            )
 
         if query.all():
             query.update(data, synchronize_session=False)
             self.session.commit()
             self.session.close()
-            return f"Your budget was updated: {data}"
+            return f"Your transaction was updated: {data}"
 
         raise HTTPException(
             status_code=404,
-            detail=f"category id {data.get('category_id')} not found",
+            detail=f"{key} id {data.get(key)} not found",
         )
 
     # trunk-ignore(ruff/D417)
@@ -103,9 +112,9 @@ class DataBaseOperations(object):
             self.session.delete(found_register)
             self.session.commit()
             self.session.close()
-            return f"A budget was deleted: {register}"
+            return f"Instance was deleted: {register}"
 
         raise HTTPException(
             status_code=404,
-            detail=f"category id {found_register} not found",
+            detail=f"Instance {found_register} not found",
         )

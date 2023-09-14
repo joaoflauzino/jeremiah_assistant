@@ -72,6 +72,7 @@ def delete(data: Delete):
 
 
 @app.get("/transaction/budget/", status_code=status.HTTP_200_OK)
+# trunk-ignore(ruff/B008)
 def read_transaction(items: Union[List[int], None] = Query(default=[1])):
     register = DataBaseOperations()
     rsp = register.get_instance(items, FactTransactionFinance)
@@ -79,6 +80,7 @@ def read_transaction(items: Union[List[int], None] = Query(default=[1])):
 
 
 @app.post("/transaction/budget/register", status_code=status.HTTP_201_CREATED)
+# trunk-ignore(ruff/F811)
 def register(data: RegisterTransaction):
     data_transformed = jsonable_encoder(data)
 
@@ -97,17 +99,16 @@ def register(data: RegisterTransaction):
 
 
 @app.put("/transaction/budget/update", status_code=status.HTTP_201_CREATED)
+# trunk-ignore(ruff/F811)
 def update(data: RegisterUpdateTransaction):
     data_transformed = jsonable_encoder(data)
-    data_transformed["datetime_transaction"] = datetime.strptime(
-        data_transformed["datetime_transaction"], "%Y-%m-%dT%H:%M:%S.%f"
-    )
     register = DataBaseOperations()
     rsp = register.update_instance(data_transformed, FactTransactionFinance)
     return rsp
 
 
 @app.delete("/transaction/budget/delete", status_code=status.HTTP_200_OK)
+# trunk-ignore(ruff/F811)
 def delete(data: DeleteTransaction):
     register = DataBaseOperations()
     data_transformed = jsonable_encoder(data)
