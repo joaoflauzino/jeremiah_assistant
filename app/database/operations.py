@@ -24,7 +24,7 @@ class DataBaseOperations(object):
         self.session.commit()
         self.session.close()
 
-        return f"A instance was created. Category: {TableObject.category_id}"
+        return "A instance was created."
 
     # trunk-ignore(ruff/D417)
     def get_instance(self, items: list, TableObject: object) -> list:
@@ -40,8 +40,10 @@ class DataBaseOperations(object):
         ------
             (dict): Database instance.
         """
-        found_registers = self.session.query(TableObject).filter(
-            TableObject.category_id.in_(items)
+        found_registers = (
+            self.session.query(TableObject).filter(TableObject.category_id.in_(items))
+            if "category_id" in dir(TableObject)
+            else self.session.query(TableObject).filter(TableObject.card_id.in_(items))
         )
 
         if found_registers.all():
@@ -79,6 +81,11 @@ class DataBaseOperations(object):
         elif "category_id" in data:
             query = self.session.query(TableObject).filter(
                 TableObject.category_id == data.get("category_id")
+            )
+
+        elif "card_id" in data:
+            query = self.session.query(TableObject).filter(
+                TableObject.card_id == data.get("card_id")
             )
 
         if query.all():

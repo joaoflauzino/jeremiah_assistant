@@ -27,6 +27,15 @@ class DimensionFinanceTable(Base):
     budget = Column(Float, nullable=False)
 
 
+class DimensionCreditCardTable(Base):
+    __tablename__ = "dimension_credit_card"
+    card_id = Column(Integer, primary_key=True)
+    card_name = Column(String, nullable=False)
+    closing_date = Column(String, nullable=False)
+    card_limit = Column(Float, nullable=False)
+    record_status = Column(Integer, nullable=False)
+
+
 class FactTransactionFinance(Base):
     __tablename__ = "fact_finance"
     transaction_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -34,13 +43,14 @@ class FactTransactionFinance(Base):
         Integer, ForeignKey("dimension_finance.category_id"), nullable=False
     )
     datetime_transaction = Column(DateTime, nullable=False)
+    card_id = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
 
 
 def create_database_engine() -> None:
     """
-    Function responsible to create a database engine
-    Args: None
-    Return: None
+    Responsible to create a database engine.
+    Args: None.
+    Return: None.
     """
     Base.metadata.create_all(engine)
