@@ -6,7 +6,7 @@ from database import register_engine
 from fastapi.encoders import jsonable_encoder
 from typing import List, Union
 
-from validation_schema.validate import (
+from validation_schema.database.validate import (
     Register,
     Delete,
     RegisterTransaction,
@@ -33,23 +33,19 @@ def root():
 
 @app.get("/dimension/budget", status_code=status.HTTP_200_OK)
 # trunk-ignore(ruff/B008)
-def read_budget(items: Union[List[int], None] = Query(default=[1])):
+def read_budget(items: Union[List[str], None] = Query(default=[])):
     register = DataBaseOperations()
     rsp = register.get_instance(items, DimensionFinanceTable)
-    return rsp[0]
+    return rsp
 
 
 @app.post("/dimension/budget/register", status_code=status.HTTP_201_CREATED)
 def register(data: Register):
     data_transformed = jsonable_encoder(data)
-
     dimension_finance_table_instance = DimensionFinanceTable(
-        category_id=data_transformed.get("category_id"),
         category_name=data_transformed.get("category_name"),
-        budget_type=data_transformed.get("budget_type"),
         budget=data_transformed.get("budget"),
     )
-
     register = DataBaseOperations()
     rsp = register.create_instance(dimension_finance_table_instance)
     return f"Register was created: {rsp}"

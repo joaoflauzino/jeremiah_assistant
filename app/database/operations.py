@@ -40,8 +40,11 @@ class DataBaseOperations(object):
         ------
             (dict): Database instance.
         """
+        if not items:
+            return self.session.query(TableObject).all()
+
         found_registers = self.session.query(TableObject).filter(
-            TableObject.category_id.in_(items)
+            TableObject.category_name.in_(items)
         )
 
         if found_registers.all():
@@ -71,15 +74,15 @@ class DataBaseOperations(object):
 
         key = "category_id"
 
-        if "transaction_id" in data:
-            query = self.session.query(TableObject).filter(
-                TableObject.transaction_id == data.get("transaction_id")
-            )
+        # if "transaction_id" in data:
+        #     query = self.session.query(TableObject).filter(
+        #         TableObject.transaction_id == data.get("transaction_id")
+        #     )
 
-        elif "category_id" in data:
-            query = self.session.query(TableObject).filter(
-                TableObject.category_id == data.get("category_id")
-            )
+       
+        query = self.session.query(TableObject).filter(
+            TableObject.category_name == data.get("category")
+        )
 
         if query.all():
             query.update(data, synchronize_session=False)

@@ -14,16 +14,15 @@ import os
 path = os.getcwd()
 
 # Creating database engine
-engine = create_engine(f"sqlite:///{path}/database/assistant.db")
+engine = create_engine("postgresql://postgres:postgres@localhost:5432/assistant_db")
 
 Base = declarative_base()
 
 
 class DimensionFinanceTable(Base):
     __tablename__ = "dimension_finance"
-    category_id = Column(Integer, primary_key=True)
+    category_id = Column(Integer, primary_key=True, autoincrement=True)
     category_name = Column(String, nullable=False)
-    budget_type = Column(String)
     budget = Column(Float, nullable=False)
 
 

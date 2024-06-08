@@ -5,9 +5,7 @@ from datetime import datetime
 
 # Schema to Register and Update in dimension table
 class Register(BaseModel):
-    category_id: int
     category_name: str
-    budget_type: str
     budget: float
 
 

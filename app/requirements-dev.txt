@@ -1,3 +1,0 @@
-black
-bandit
-flake8
