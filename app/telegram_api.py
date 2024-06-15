@@ -5,22 +5,23 @@ import json
 
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
 ASSISTANT_URL = os.getenv("ASSISTANT_URL")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
+
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Olá! Eu sou o Jeremias, seu assistente financeiro. Como posso ajudar?')
+    await update.message.reply_text("Olá! Eu sou o Jeremias, seu assistente financeiro. Como posso ajudar?")
+
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     user_message = update.message.text
-    response = requests.post(
-            url=f"{ASSISTANT_URL}/assistant",
-            data=json.dumps({"text": user_message})
-        )
+    response = requests.post(url=f"{ASSISTANT_URL}/assistant", data=json.dumps({"text": user_message}))
     await update.message.reply_text(response.text)
+
 
 def main() -> None:
     application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -30,5 +31,6 @@ def main() -> None:
 
     application.run_polling()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

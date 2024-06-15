@@ -12,6 +12,7 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @app.post("/assistant", status_code=status.HTTP_200_OK, response_class=PlainTextResponse)
 def gemini_assistant(text: Assistant) -> str:
     try:
@@ -22,6 +23,7 @@ def gemini_assistant(text: Assistant) -> str:
     except Exception as e:
         logger.error(f"Failed to process message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 if __name__ == "__main__":
     uvicorn.run("assistant_api:app", host="0.0.0.0", port=9000, reload=True, workers=1)

@@ -1,11 +1,12 @@
-import os
-import requests
-import google.generativeai as genai
 import json
-from typing import Iterable
 import logging
-from google.api_core import retry
+import os
+from typing import Iterable
+
+import google.generativeai as genai
+import requests
 from dotenv import load_dotenv
+from google.api_core import retry
 
 load_dotenv()
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 DATABASE_API_URL = os.getenv("DATABASE_URL")
 
-api_key = os.getenv('GOOGLE_API_KEY')
+api_key = os.getenv("GOOGLE_API_KEY")
 if not api_key:
     raise EnvironmentError("GOOGLE_API_KEY environment variable not set.")
 genai.configure(api_key=api_key)
@@ -40,6 +41,7 @@ You have 3 functions available: get_budget, add_budget and update_budget
 For get_budget, pass the categories on what I tell you, and the function will return the budget for each category.
 For add_budget, pass the category and budget value base on I tell you to create new budget, and the function will create the budget.
 For update_budget, pass the category and budget value base on I tell you to update the budget, and the function will update the budget.
+For delete_budget, pass the category name base on I tell you to delete the budget, and the function will delete the budget.
 
 Examples:
 
@@ -74,11 +76,8 @@ def add_budget(category: str, value: float) -> str:
     try:
         logger.info(f"Input category: {category}, Input values: {value}")
         response = requests.post(
-            url=f"{DATABASE_API_URL}/dimension/budget/register", 
-            data=json.dumps({
-                  "category_name": category,
-                  "budget": value 
-                })
+            url=f"{DATABASE_API_URL}/dimension/budget/register",
+            data=json.dumps({"category_name": category, "budget": value}),
         )
         response.raise_for_status()
         logger.info(f"Response.text: {response.text}")
@@ -86,20 +85,17 @@ def add_budget(category: str, value: float) -> str:
     except requests.RequestException as e:
         logger.error(f"Failed to create budget for categories {category}: {e}")
         return str(e)
-    
+
+
 def update_budget(category: str, value: float) -> str:
     """
     Function responsible to update budget for category.
     """
     try:
         logger.info(f"Input category: {category}, Input values: {value}")
-        import pdb; pdb.set_trace()
         response = requests.put(
             url=f"{DATABASE_API_URL}/dimension/budget/update",
-            data=json.dumps({
-                  "category_name": category,
-                  "budget": value 
-                }),
+            data=json.dumps({"category_name": category, "budget": value}),
             timeout=500,
         )
         response.raise_for_status()
@@ -109,15 +105,14 @@ def update_budget(category: str, value: float) -> str:
         logger.error(f"Failed to update budget for categories {category}: {e}")
         return str(e)
 
+
 def get_budget(categories: Iterable[str] = []) -> str:
     """
     Function responsible to get budget value for each or all categories.
     """
     try:
         logger.info(f"Input categories: {categories}")
-        response = requests.get(
-            url=f"{DATABASE_API_URL}/dimension/budget", params={"items": categories}, timeout=500
-        )
+        response = requests.get(url=f"{DATABASE_API_URL}/dimension/budget", params={"items": categories}, timeout=500)
         response.raise_for_status()
         logger.info(f"Response.text: {response.text}")
         return response.text
@@ -125,17 +120,37 @@ def get_budget(categories: Iterable[str] = []) -> str:
         logger.error(f"Failed to get budget for categories {categories}: {e}")
         return str(e)
 
-tools = [get_budget, add_budget, update_budget]
-model_name = 'gemini-1.0-pro-latest'
+
+def delete_budget(category: str) -> str:
+    """
+    Function responsible to delete budget value for specific category.
+    """
+    try:
+        logger.info(f"Input category: {category}")
+        response = requests.delete(
+            url=f"{DATABASE_API_URL}/dimension/budget/delete",
+            data=json.dumps({"category_name": category}),
+        )
+        response.raise_for_status()
+        logger.info(f"Response.text: {response.text}")
+        return response.text
+    except requests.RequestException as e:
+        logger.error(f"Failed to delete category {category}: {e}")
+        return str(e)
+
+
+tools = [get_budget, add_budget, update_budget, delete_budget]
+model_name = "gemini-1.0-pro-latest"
 model = genai.GenerativeModel(model_name, tools=tools)
 
 convo = model.start_chat(
     history=[
-        {'role': 'user', 'parts': [JEREMIAS_ASSISTANT_PROMPT]},
-        {'role': 'model', 'parts': ['OK I understand. I will do my best!']}
+        {"role": "user", "parts": [JEREMIAS_ASSISTANT_PROMPT]},
+        {"role": "model", "parts": ["OK I understand. I will do my best!"]},
     ],
-    enable_automatic_function_calling=True
+    enable_automatic_function_calling=True,
 )
+
 
 @retry.Retry(initial=30)
 def send_message(message: str) -> str:

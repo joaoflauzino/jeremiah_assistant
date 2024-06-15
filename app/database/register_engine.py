@@ -29,9 +29,7 @@ class DimensionFinanceTable(Base):
 class FactTransactionFinance(Base):
     __tablename__ = "fact_finance"
     transaction_id = Column(Integer, primary_key=True, autoincrement=True)
-    category_id = Column(
-        Integer, ForeignKey("dimension_finance.category_id"), nullable=False
-    )
+    category_id = Column(Integer, ForeignKey("dimension_finance.category_id"), nullable=False)
     datetime_transaction = Column(DateTime, nullable=False)
     amount = Column(Float, nullable=False)
 

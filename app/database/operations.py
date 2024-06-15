@@ -43,9 +43,7 @@ class DataBaseOperations(object):
         if not items:
             return self.session.query(TableObject).all()
 
-        found_registers = self.session.query(TableObject).filter(
-            TableObject.category_name.in_(items)
-        )
+        found_registers = self.session.query(TableObject).filter(TableObject.category_name.in_(items))
 
         if found_registers.all():
             self.session.commit()
@@ -74,17 +72,11 @@ class DataBaseOperations(object):
 
         key = "category_id"
 
-        # if "transaction_id" in data:
-        #     query = self.session.query(TableObject).filter(
-        #         TableObject.transaction_id == data.get("transaction_id")
-        #     )
-
-       
-        query = self.session.query(TableObject).filter(
-            TableObject.category_name == data.get("category")
-        )
+        query = self.session.query(TableObject).filter(TableObject.category_name == data.get("category_name"))
 
         if query.all():
+            category_id = query.all()[0].category_id
+            data.update({"category_id": category_id})
             query.update(data, synchronize_session=False)
             self.session.commit()
             self.session.close()
@@ -110,7 +102,9 @@ class DataBaseOperations(object):
             (str): returns a message showing which
             category and subcategory were deleted.
         """
-        found_register = self.session.query(TableObject).get(register)
+        found_register = (
+            self.session.query(TableObject).filter(TableObject.category_name == register.get("category_name")).first()
+        )
         if found_register:
             self.session.delete(found_register)
             self.session.commit()
