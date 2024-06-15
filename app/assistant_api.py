@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def gemini_assistant(text: Assistant) -> str:
     try:
         transformed_text = jsonable_encoder(text)
-        logger.info(f"Sending api request...")
+        logger.info("Sending api request...")
         response = send_message(transformed_text["text"])
         return response
     except Exception as e:

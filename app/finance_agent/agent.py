@@ -159,4 +159,4 @@ def send_message(message: str) -> str:
         return response.text
     except Exception as error:
         logger.error(f"Failed to send message: {error}")
-        return error
+        return str(error)

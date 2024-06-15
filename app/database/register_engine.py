@@ -1,22 +1,24 @@
+import os
+from typing import Type
+
 from sqlalchemy import (
-    create_engine,
     Column,
-    Integer,
-    String,
+    DateTime,
     Float,
     ForeignKey,
-    DateTime,
+    Integer,
+    String,
+    create_engine,
 )
 from sqlalchemy.ext.declarative import declarative_base
-
-import os
 
 path = os.getcwd()
 
 # Creating database engine
 engine = create_engine("postgresql://postgres:postgres@localhost:5432/assistant_db")
 
-Base = declarative_base()
+
+Base: Type = declarative_base()
 
 
 class DimensionFinanceTable(Base):

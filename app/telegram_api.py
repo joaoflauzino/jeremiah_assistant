@@ -1,26 +1,34 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
-import requests
 import json
-
 import os
+
+import requests
 from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CallbackContext,
+    CommandHandler,
+    MessageHandler,
+    filters,
+)
 
 load_dotenv()
 
 
-ASSISTANT_URL = os.getenv("ASSISTANT_URL")
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+ASSISTANT_URL = os.environ["ASSISTANT_URL"]
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 
 
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text("Olá! Eu sou o Jeremias, seu assistente financeiro. Como posso ajudar?")
+    if update.message:
+        await update.message.reply_text("Olá! Eu sou o Jeremias, seu assistente financeiro. Como posso ajudar?")
 
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
-    user_message = update.message.text
-    response = requests.post(url=f"{ASSISTANT_URL}/assistant", data=json.dumps({"text": user_message}))
-    await update.message.reply_text(response.text)
+    if update.message:
+        user_message = update.message.text
+        response = requests.post(url=f"{ASSISTANT_URL}/assistant", data=json.dumps({"text": user_message}))
+        await update.message.reply_text(response.text)
 
 
 def main() -> None:
