@@ -76,7 +76,7 @@ def add_budget(category: str, value: float) -> str:
     try:
         logger.info(f"Input category: {category}, Input values: {value}")
         response = requests.post(
-            url=f"{DATABASE_API_URL}/dimension/budget/register",
+            url=f"{DATABASE_API_URL}/dimension/budget",
             data=json.dumps({"category_name": category, "budget": value}),
         )
         response.raise_for_status()
@@ -94,7 +94,7 @@ def update_budget(category: str, value: float) -> str:
     try:
         logger.info(f"Input category: {category}, Input values: {value}")
         response = requests.put(
-            url=f"{DATABASE_API_URL}/dimension/budget/update",
+            url=f"{DATABASE_API_URL}/dimension/budget",
             data=json.dumps({"category_name": category, "budget": value}),
             timeout=500,
         )
@@ -128,7 +128,7 @@ def delete_budget(category: str) -> str:
     try:
         logger.info(f"Input category: {category}")
         response = requests.delete(
-            url=f"{DATABASE_API_URL}/dimension/budget/delete",
+            url=f"{DATABASE_API_URL}/dimension/budget",
             data=json.dumps({"category_name": category}),
         )
         response.raise_for_status()
