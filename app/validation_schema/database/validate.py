@@ -1,19 +1,17 @@
-from pydantic import BaseModel
 from typing import List
-from datetime import datetime
+
+from pydantic import BaseModel
 
 
 # Schema to Register and Update in dimension table
 class Register(BaseModel):
-    category_id: int
     category_name: str
-    budget_type: str
     budget: float
 
 
 # Schema to Delete in dimension table
 class Delete(BaseModel):
-    category_id: int
+    category_name: str
 
 
 # Schema to Select in dimension table

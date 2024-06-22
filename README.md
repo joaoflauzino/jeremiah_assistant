@@ -2,20 +2,30 @@
 
 Assistant that helps to organize personal life stuffs. In the first moment the focus of this project will be the financial organization.
 
-## TODO BACKEND
+The assistant will be able to do:
 
-- [x] CREATE DIMENSION AND FACT TABLE WITH SQLALCHEMY
-- [x] CREATE A REGISTER ROUTE TO CREATE A DIMENSION TABLE BUDGET INSTANCE
-- [x] CREATE A DELETE ROUTE TO DELETE A DIMENSION TABLE BUDGET INSTANCE
-- [x] CREATE A GET ROUTE TO GET A DIMENSION TABLE BUDGET INSTANCE
-- [x] CREATE A PUT ROUTE TO GET A DIMENSION TABLE BUDGET INSTANCE
-- [ ] CREATE A REGISTER ROUTE TO CREATE A FACT TABLE AMOUNT INSTANCE
-- [ ] CREATE A DELETE ROUTE TO DELETE A FACT TABLE AMOUNT INSTANCE
-- [ ] CREATE A GET ROUTE TO GET A FACT TABLE AMOUNT INSTANCE
-- [ ] CREATE A PUT ROUTE TO GET A FACT TABLE AMOUNT INSTANCE
+* Record spending limit by category
+* Report spending limit by category
+* Edit spending limit by category
+* Delete spending limit by category
+
+* Record spending by category
+* Report spending by category
+* Edit spending by category
+* Delete spending by category
+* Alert if expenses exceed the limit established for the category
 
 
-## TODO TELEGRAM BOT
+## Implemented Features
 
+- [x] Record spending limit by category
+- [x] Report spending limit by category
+- [x] Edit spending limit by category
+- [x] Delete spending limit by category
+- [ ] Record spending by category
+- [ ] Report spending by category
+- [ ] Edit spending by category
+- [ ] Delete spending by category
+- [ ] Alert if expenses exceed the limit established for the category
 
 

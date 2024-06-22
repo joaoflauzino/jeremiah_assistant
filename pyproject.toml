@@ -1,0 +1,61 @@
+[tool.poetry]
+name = "assistant"
+version = "0.1.0"
+description = ""
+authors = ["joaoflauzino"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+google-generativeai = "^0.6.0"
+python-telegram-bot = "^21.3"
+fastapi = "^0.111.0"
+sqlalchemy = "^2.0.30"
+psycopg2-binary = "^2.9.9"
+types-requests = "^2.32.0.20240602"
+sqlalchemy-stubs = "^0.4"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.25.0"
+flake8 = "^7.0.0"
+black = "^24.4.2"
+bandit = "^1.7.8"
+pre-commit = "^3.7.1"
+mypy = "^1.10.0"
+ruff = "^0.4.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120 # override black's default line-length
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | venv
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+# make it compatible with black
+profile = "black" 
+
+[tool.ruff]
+line-length = 120
+
+[tool.mypy]
+python_version = "3.11"
+files = [
+    "app/",
+    # Add other directories if necessary
+]
+exclude = [".*__pycache__.*"]
+explicit_package_bases = true

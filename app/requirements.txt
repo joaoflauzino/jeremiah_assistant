@@ -1,6 +1,0 @@
-fastapi
-sqlalchemy
-sqlalchemy-orm
-pydantic
-uvicorn[default]
-python-telegram-bot==20.0a1

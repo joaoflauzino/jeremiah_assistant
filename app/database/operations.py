@@ -1,6 +1,12 @@
-from database.register_engine import engine
+from typing import List, Union
+
+from database.register_engine import (
+    DimensionFinanceTable,
+    FactTransactionFinance,
+    engine,
+)
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 
 class DataBaseOperations(object):
@@ -8,7 +14,7 @@ class DataBaseOperations(object):
         self.session = Session(bind=engine, expire_on_commit=False)
 
     # trunk-ignore(ruff/D417)
-    def create_instance(self, TableObject: object) -> str:
+    def create_instance(self, TableObject: Union[DimensionFinanceTable, FactTransactionFinance]) -> str:
         """
         Responsible to create database instance.
 
@@ -27,7 +33,9 @@ class DataBaseOperations(object):
         return f"A instance was created. Category: {TableObject.category_id}"
 
     # trunk-ignore(ruff/D417)
-    def get_instance(self, items: list, TableObject: object) -> list:
+    def get_instance(
+        self, items: List[str], TableObject: Union[DimensionFinanceTable, FactTransactionFinance]
+    ) -> List[dict]:
         """
         Responsible to get database instance.
 
@@ -40,9 +48,10 @@ class DataBaseOperations(object):
         ------
             (dict): Database instance.
         """
-        found_registers = self.session.query(TableObject).filter(
-            TableObject.category_id.in_(items)
-        )
+        if not items:
+            return self.session.query(TableObject).all()
+
+        found_registers: Query = self.session.query(TableObject).filter(TableObject.category_name.in_(items))  # type: ignore
 
         if found_registers.all():
             self.session.commit()
@@ -55,7 +64,7 @@ class DataBaseOperations(object):
         )
 
     # trunk-ignore(ruff/D417)
-    def update_instance(self, data: dict, TableObject: object) -> str:
+    def update_instance(self, data: dict, TableObject: Union[DimensionFinanceTable, FactTransactionFinance]) -> str:
         """
         Responsible to update database instance.
 
@@ -71,17 +80,11 @@ class DataBaseOperations(object):
 
         key = "category_id"
 
-        if "transaction_id" in data:
-            query = self.session.query(TableObject).filter(
-                TableObject.transaction_id == data.get("transaction_id")
-            )
-
-        elif "category_id" in data:
-            query = self.session.query(TableObject).filter(
-                TableObject.category_id == data.get("category_id")
-            )
+        query: Query = self.session.query(TableObject).filter(TableObject.category_name == data.get("category_name"))
 
         if query.all():
+            category_id = query.all()[0].category_id
+            data.update({"category_id": category_id})
             query.update(data, synchronize_session=False)
             self.session.commit()
             self.session.close()
@@ -93,7 +96,7 @@ class DataBaseOperations(object):
         )
 
     # trunk-ignore(ruff/D417)
-    def delete_instance(self, register: dict, TableObject: object) -> str:
+    def delete_instance(self, register: dict, TableObject: Union[DimensionFinanceTable, FactTransactionFinance]) -> str:
         """
         Responsible to delete database instance.
 
@@ -107,7 +110,9 @@ class DataBaseOperations(object):
             (str): returns a message showing which
             category and subcategory were deleted.
         """
-        found_register = self.session.query(TableObject).get(register)
+        found_register = (
+            self.session.query(TableObject).filter(TableObject.category_name == register.get("category_name")).first()
+        )
         if found_register:
             self.session.delete(found_register)
             self.session.commit()
