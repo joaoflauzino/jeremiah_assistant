@@ -10,17 +10,11 @@ from google.api_core import retry
 
 load_dotenv()
 
-
 logger = logging.getLogger(__name__)
 
+api_key = os.getenv("GOOGLE_API_KEY")
 
 DATABASE_API_URL = os.getenv("DATABASE_URL")
-
-api_key = os.getenv("GOOGLE_API_KEY")
-if not api_key:
-    raise EnvironmentError("GOOGLE_API_KEY environment variable not set.")
-genai.configure(api_key=api_key)
-
 CATEGORIES = ["final de semana", "mercado", "farmacia"]
 
 JEREMIAS_ASSISTANT_PROMPT = f"""
@@ -36,12 +30,19 @@ Each category has a budget, so always inform me if my spending is close to the b
 
 Remember that "final de semana" can be referred to as "FDS", "fds", "FINAL DE SEMANA", or "fim de semana", but always use "final de semana" as the parameter.
 
-You have 3 functions available: get_budget, add_budget and update_budget
+You have 4 functions available to budget: 
+    get_budget, add_budget, update_budget, delete_budget
 
-For get_budget, pass the categories on what I tell you, and the function will return the budget for each category.
-For add_budget, pass the category and budget value base on I tell you to create new budget, and the function will create the budget.
-For update_budget, pass the category and budget value base on I tell you to update the budget, and the function will update the budget.
-For delete_budget, pass the category name base on I tell you to delete the budget, and the function will delete the budget.
+And 1 funtcion to expenses:
+    add_spent
+
+For get_budget, pass the categories based on what I tell you, and the function will return the budget for each category.
+For add_budget, pass the category and budget value based on I tell you to create new budget, and the function will create the budget.
+For update_budget, pass the category and budget value based on I tell you to update the budget, and the function will update the budget.
+For delete_budget, pass the category name based on I tell you to delete the budget, and the function will delete the budget.
+For add_spent, pass the category name, value, place and credit card based on I tell you to register a new spent, and the function will register the expense.
+
+If I forgot to pass you some function parameter, please, ask me. Never pass something to parameter that you dont know.
 
 Examples:
 
@@ -67,6 +68,42 @@ When I ask you anything unrelated to finance, you can answer if you know about i
 
 Remember, you always have to answer me in Portuguese.
 """
+
+
+def add_spent(category: str, value: float, place: str, credit_card: str) -> str:
+    """
+    Function responsible for recording expenses.
+    """
+    logger.info(
+        f"Input category: {category}, Input value: {value}, Input place: {place}, Input credit card: {credit_card}"
+    )
+    try:
+
+        response_category_id = requests.get(
+            url=f"{DATABASE_API_URL}/dimension/budget", params={"items": [category]}, timeout=500
+        )
+        response_category_id.raise_for_status()
+
+        category_id = json.loads(response_category_id.text)[0]["category_id"]
+
+        data = {
+            "category_id": category_id,
+            "credit_card": credit_card,
+            "amount": value,
+        }
+
+        response_expense = requests.post(url=f"{DATABASE_API_URL}/fact/transaction", data=json.dumps(data))
+        response_expense.raise_for_status()
+        logger.info(f"Response.text: {response_expense.text}")
+        return response_expense.text
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to create your expense for category {category}: {e}")
+        return str(e)
+
+    except Exception as e:
+        logger.error(f"Failed to process request: {e}")
+        return str(e)
 
 
 def add_budget(category: str, value: float) -> str:
@@ -139,7 +176,7 @@ def delete_budget(category: str) -> str:
         return str(e)
 
 
-tools = [get_budget, add_budget, update_budget, delete_budget]
+tools = [get_budget, add_budget, update_budget, delete_budget, add_spent]
 model_name = "gemini-1.0-pro-latest"
 model = genai.GenerativeModel(model_name, tools=tools)
 

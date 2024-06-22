@@ -12,10 +12,5 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  
 volumes:
   postgres_data:
-
-
-  # TO DO
-  # configure a backup to database

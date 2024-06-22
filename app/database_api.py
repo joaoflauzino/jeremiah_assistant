@@ -33,7 +33,7 @@ def root():
 # trunk-ignore(ruff/B008)
 def read_budget(items: Union[List[Any]] = Query(default=[])):
     register = DataBaseOperations()
-    rsp = register.get_instance(items, dimension_object)
+    rsp = register.get_instance(items, DimensionFinanceTable)
     return rsp
 
 
@@ -53,7 +53,7 @@ def register_budget(data: Register):
 def update_budget(data: Register):
     data_transformed = jsonable_encoder(data)
     register = DataBaseOperations()
-    rsp = register.update_instance(data_transformed, dimension_object)
+    rsp = register.update_instance(data_transformed, DimensionFinanceTable)
     return rsp
 
 
@@ -61,11 +61,11 @@ def update_budget(data: Register):
 def delete_budget(data: Delete):
     register = DataBaseOperations()
     data_transformed = jsonable_encoder(data)
-    rsp = register.delete_instance(data_transformed, dimension_object)
+    rsp = register.delete_instance(data_transformed, DimensionFinanceTable)
     return f" These registers were deleted: {rsp}"
 
 
-@app.get("/transaction/budget", status_code=status.HTTP_200_OK)
+@app.get("/fact/transaction", status_code=status.HTTP_200_OK)
 # trunk-ignore(ruff/B008)
 def read_transaction(items: Union[List[Any]] = Query(default=[1])):
     register = DataBaseOperations()
@@ -73,7 +73,7 @@ def read_transaction(items: Union[List[Any]] = Query(default=[1])):
     return rsp
 
 
-@app.post("/transaction/budget", status_code=status.HTTP_201_CREATED)
+@app.post("/fact/transaction", status_code=status.HTTP_201_CREATED)
 # trunk-ignore(ruff/F811)
 def register_transaction(data: RegisterTransaction):
     data_transformed = jsonable_encoder(data)
@@ -83,6 +83,7 @@ def register_transaction(data: RegisterTransaction):
     transaction_finance_table_instance = FactTransactionFinance(
         category_id=data_transformed.get("category_id"),
         datetime_transaction=transaction_date,
+        credit_card=data_transformed.get("credit_card"),
         amount=data_transformed.get("amount"),
     )
 
@@ -92,7 +93,7 @@ def register_transaction(data: RegisterTransaction):
     return f"Register was created: {rsp}"
 
 
-@app.put("/transaction/budget", status_code=status.HTTP_201_CREATED)
+@app.put("/fact/transaction", status_code=status.HTTP_201_CREATED)
 # trunk-ignore(ruff/F811)
 def update_transaction(data: RegisterUpdateTransaction):
     data_transformed = jsonable_encoder(data)
@@ -101,7 +102,7 @@ def update_transaction(data: RegisterUpdateTransaction):
     return rsp
 
 
-@app.delete("/transaction/budget", status_code=status.HTTP_200_OK)
+@app.delete("/fact/transaction", status_code=status.HTTP_200_OK)
 # trunk-ignore(ruff/F811)
 def delete_transaction(data: DeleteTransaction):
     register = DataBaseOperations()

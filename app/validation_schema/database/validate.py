@@ -27,6 +27,7 @@ class ListCategory(BaseModel):
 # Schema to register a transcation in fact table
 class RegisterTransaction(BaseModel):
     category_id: int
+    credit_card: str
     amount: float
 
 
