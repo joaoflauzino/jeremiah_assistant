@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 import requests
@@ -11,6 +12,11 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
 
 load_dotenv()
 
@@ -27,6 +33,9 @@ async def start(update: Update, context: CallbackContext) -> None:
 async def handle_message(update: Update, context: CallbackContext) -> None:
     if update.message:
         user_message = update.message.text
+
+        logger.info(user_message)
+
         response = requests.post(url=f"{ASSISTANT_URL}/assistant", data=json.dumps({"text": user_message}))
         await update.message.reply_text(response.text)
 

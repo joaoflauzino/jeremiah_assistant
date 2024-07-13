@@ -39,76 +39,98 @@ def read_budget(items: Union[List[Any]] = Query(default=[])):
 
 @app.post("/dimension/budget", status_code=status.HTTP_201_CREATED)
 def register_budget(data: Register):
-    data_transformed = jsonable_encoder(data)
-    dimension_finance_table_instance = DimensionFinanceTable(
-        category_name=data_transformed.get("category_name"),
-        budget=data_transformed.get("budget"),
-    )
-    register = DataBaseOperations()
-    rsp = register.create_instance(dimension_finance_table_instance)
-    return f"Register was created: {rsp}"
+    try:
+        data_transformed = jsonable_encoder(data)
+        dimension_finance_table_instance = DimensionFinanceTable(
+            category_name=data_transformed.get("category_name"),
+            budget=data_transformed.get("budget"),
+        )
+        register = DataBaseOperations()
+        rsp = register.create_instance(dimension_finance_table_instance)
+        return f"Register was created: {rsp}"
+    except Exception as error:
+        return error.detail
 
 
 @app.put("/dimension/budget", status_code=status.HTTP_201_CREATED)
 def update_budget(data: Register):
-    data_transformed = jsonable_encoder(data)
-    register = DataBaseOperations()
-    rsp = register.update_instance(data_transformed, DimensionFinanceTable)
-    return rsp
+    try:
+        data_transformed = jsonable_encoder(data)
+        register = DataBaseOperations()
+        rsp = register.update_instance(data_transformed, DimensionFinanceTable)
+        return rsp
+    except Exception as error:
+        return error.detail
 
 
 @app.delete("/dimension/budget", status_code=status.HTTP_200_OK)
 def delete_budget(data: Delete):
-    register = DataBaseOperations()
-    data_transformed = jsonable_encoder(data)
-    rsp = register.delete_instance(data_transformed, DimensionFinanceTable)
-    return f" These registers were deleted: {rsp}"
+    try:
+        register = DataBaseOperations()
+        data_transformed = jsonable_encoder(data)
+        rsp = register.delete_instance(data_transformed, DimensionFinanceTable)
+        return f" These registers were deleted: {rsp}"
+    except Exception as error:
+        return error.detail
 
 
 @app.get("/fact/transaction", status_code=status.HTTP_200_OK)
 # trunk-ignore(ruff/B008)
-def read_transaction(items: Union[List[Any]] = Query(default=[1])):
-    register = DataBaseOperations()
-    rsp = register.get_instance(items, fact_object)
-    return rsp
+def read_transaction(items: Union[List[Any]] = Query(default=[])):
+    try:
+        register = DataBaseOperations()
+        rsp = register.get_instance(items, fact_object)
+        return rsp
+    except Exception as error:
+        return error.detail
 
 
 @app.post("/fact/transaction", status_code=status.HTTP_201_CREATED)
 # trunk-ignore(ruff/F811)
 def register_transaction(data: RegisterTransaction):
-    data_transformed = jsonable_encoder(data)
+    try:
+        data_transformed = jsonable_encoder(data)
 
-    transaction_date = datetime.now()
+        transaction_date = datetime.now()
 
-    transaction_finance_table_instance = FactTransactionFinance(
-        category_id=data_transformed.get("category_id"),
-        datetime_transaction=transaction_date,
-        credit_card=data_transformed.get("credit_card"),
-        amount=data_transformed.get("amount"),
-    )
+        transaction_finance_table_instance = FactTransactionFinance(
+            category_id=data_transformed.get("category_id"),
+            tag=data_transformed.get("tag"),
+            datetime_transaction=transaction_date,
+            credit_card=data_transformed.get("credit_card"),
+            amount=data_transformed.get("amount"),
+        )
 
-    register = DataBaseOperations()
+        register = DataBaseOperations()
 
-    rsp = register.create_instance(transaction_finance_table_instance)
-    return f"Register was created: {rsp}"
+        rsp = register.create_instance(transaction_finance_table_instance)
+        return f"Register was created: {rsp}"
+    except Exception as error:
+        return error.detail
 
 
 @app.put("/fact/transaction", status_code=status.HTTP_201_CREATED)
 # trunk-ignore(ruff/F811)
 def update_transaction(data: RegisterUpdateTransaction):
-    data_transformed = jsonable_encoder(data)
-    register = DataBaseOperations()
-    rsp = register.update_instance(data_transformed, fact_object)
-    return rsp
+    try:
+        data_transformed = jsonable_encoder(data)
+        register = DataBaseOperations()
+        rsp = register.update_instance(data_transformed, fact_object)
+        return rsp
+    except Exception as error:
+        return error.detail
 
 
 @app.delete("/fact/transaction", status_code=status.HTTP_200_OK)
 # trunk-ignore(ruff/F811)
 def delete_transaction(data: DeleteTransaction):
-    register = DataBaseOperations()
-    data_transformed = jsonable_encoder(data)
-    rsp = register.delete_instance(data_transformed, fact_object)
-    return f" These registers were deleted: {rsp}"
+    try:
+        register = DataBaseOperations()
+        data_transformed = jsonable_encoder(data)
+        rsp = register.delete_instance(data_transformed, fact_object)
+        return f" These registers were deleted: {rsp}"
+    except Exception as error:
+        return error.detail
 
 
 if __name__ == "__main__":

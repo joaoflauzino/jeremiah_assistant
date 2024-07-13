@@ -6,12 +6,14 @@ repos:
         entry: poetry run ruff check --fix app/
         language: system
         types: [python]
+        stages: [manual]
 
       - id: black
         name: black
         entry: poetry run black app/
         language: system
         types: [python]
+        stages: [manual]
 
       - id: mypy
         name: mypy

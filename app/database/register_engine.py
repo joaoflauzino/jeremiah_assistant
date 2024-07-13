@@ -32,6 +32,7 @@ class FactTransactionFinance(Base):
     __tablename__ = "fact_finance"
     transaction_id = Column(Integer, primary_key=True, autoincrement=True)
     category_id = Column(Integer, ForeignKey("dimension_finance.category_id"), nullable=False)
+    tag = Column(String, nullable=False)
     datetime_transaction = Column(DateTime, nullable=False)
     credit_card = Column(String, nullable=False)
     amount = Column(Float, nullable=False)

@@ -6,6 +6,7 @@ from database.register_engine import (
     engine,
 )
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, Session
 
 
@@ -26,11 +27,21 @@ class DataBaseOperations(object):
         ------
             (str): returns a message showing which category was inserted.
         """
-        self.session.add(TableObject)
-        self.session.commit()
-        self.session.close()
-
-        return f"A instance was created. Category: {TableObject.category_id}"
+        try:
+            self.session.add(TableObject)
+            self.session.commit()
+            category_name = getattr(TableObject, "category_name", "Unknown")
+            return f"An instance was created. Category: {category_name}"
+        except IntegrityError as error:
+            self.session.rollback()
+            raise HTTPException(
+                status_code=400, detail=f"Problem registering item. Item may already exist: {error.orig}"
+            )
+        except Exception as error:
+            self.session.rollback()
+            raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {error}")
+        finally:
+            self.session.close()
 
     # trunk-ignore(ruff/D417)
     def get_instance(
@@ -48,10 +59,17 @@ class DataBaseOperations(object):
         ------
             (dict): Database instance.
         """
+
+        field_filter = {
+            "DimensionFinanceTable": TableObject.category_name,
+            "FactTransactionFinance": TableObject.category_id,
+        }
+
         if not items:
             return self.session.query(TableObject).all()
 
-        found_registers: Query = self.session.query(TableObject).filter(TableObject.category_name.in_(items))  # type: ignore
+        # found_registers: Query = self.session.query(TableObject).filter(TableObject.category_name.in_(items))  # type: ignore
+        found_registers: Query = self.session.query(TableObject).filter(field_filter[TableObject.__name__].in_(items))  # type: ignore
 
         if found_registers.all():
             self.session.commit()
