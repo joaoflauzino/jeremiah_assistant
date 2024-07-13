@@ -1,38 +1,34 @@
-# Telegram Assistent
+# Telegram Assistant
 
-Assistant that helps to organize personal life stuffs. In the first moment the focus of this project will be the financial organization.
+An assistant designed to help organize personal life matters, focusing initially on financial organization.
 
-The assistant will be able to do:
+The assistant can:
 
-* Record spending limit by category
-* Report spending limit by category
-* Edit spending limit by category
-* Delete spending limit by category
+* Record spending limits by category
+* Report spending limits by category
+* Edit spending limits by category
+* Delete spending limits by category
 
 * Record spending by category
 * Report spending by category
 * Edit spending by category
 * Delete spending by category
-* Alert if expenses exceed the limit established for the category
-
+* Alert when expenses exceed the established limit for a category
 
 ## Implemented Features
 
-- [x] Record spending limit by category
-- [x] Report spending limit by category
-- [x] Edit spending limit by category
-- [x] Delete spending limit by category
+- [x] Record spending limits by category
+- [x] Report spending limits by category
+- [x] Edit spending limits by category
+- [x] Delete spending limits by category
 - [x] Record spending by category
 - [ ] Report spending by category
 - [ ] Edit spending by category
 - [ ] Delete spending by category
-- [ ] Alert if expenses exceed the limit established for the category
-
+- [ ] Alert when expenses exceed the limit established for the category
 
 ## Issues
 
-- [ ] Improve the way that LLM interpret exceptions. For example: When I try to update a category that already exists.
-- [ ] Sometimes LLM is passing a simple string with special character. Example: farmacia -> farm\303\241cia
-- [ ] Sometimes LLM is add budget and spent without asking all parameters. Example: LLM is updating "farmacia" category without asking me the value and is assuming a random value. A idea to solve it will be to implement a pydantic validator before agent call the database api.
-
-
+- [ ] Improve the way the assistant interprets exceptions. For example, when attempting to update a category that already exists.
+- [ ] Sometimes the assistant passes a simple string with special characters. Example: "farmacia" becomes "farm\303\241cia".
+- [ ] Sometimes the assistant adds budget and spending without asking for all parameters. For example, updating the "farmacia" category without requesting the value and assuming a random value. One solution could be implementing a Pydantic validator before the assistant calls the database API.
