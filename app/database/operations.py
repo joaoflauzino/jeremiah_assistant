@@ -30,7 +30,7 @@ class DataBaseOperations(object):
         try:
             self.session.add(TableObject)
             self.session.commit()
-            category_name = getattr(TableObject, "category_name", "Unknown")
+            category_name = getattr(TableObject, "category_name", "Unknown")  # TODO
             return f"An instance was created. Category: {category_name}"
         except IntegrityError as error:
             self.session.rollback()
