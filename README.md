@@ -31,8 +31,8 @@ The assistant will be able to do:
 
 ## Issues
 
-- [] Improve the way that LLM interpret exceptions. For example: When I try to update a category that already exists.
-- [] Sometimes LLM is passing a simple string with special character. Example: farmacia -> farm\303\241cia
-- [] Sometimes LLM is add budget and spent without asking all parameters. Example: LLM is updating "farmacia" category without asking me the value and is assuming a random value. A idea to solve it will be to implement a pydantic validator before agent call the database api.
+- [ ] Improve the way that LLM interpret exceptions. For example: When I try to update a category that already exists.
+- [ ] Sometimes LLM is passing a simple string with special character. Example: farmacia -> farm\303\241cia
+- [ ] Sometimes LLM is add budget and spent without asking all parameters. Example: LLM is updating "farmacia" category without asking me the value and is assuming a random value. A idea to solve it will be to implement a pydantic validator before agent call the database api.
 
 
