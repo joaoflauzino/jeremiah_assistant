@@ -21,7 +21,7 @@ engine = create_engine("postgresql://postgres:postgres@localhost:5432/assistant_
 Base: Type = declarative_base()
 
 
-class DimensionFinanceTable(Base):
+class DimensionSpendFinance(Base):
     __tablename__ = "dimension_finance"
     category_id = Column(Integer, primary_key=True, autoincrement=True)
     category_name = Column(String, nullable=False)

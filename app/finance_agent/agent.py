@@ -1,25 +1,29 @@
-import json
-import logging
 import os
 from typing import Iterable
 
 import google.generativeai as genai
-import requests
 from dotenv import load_dotenv
 from google.api_core import retry
 from preprocessing.decorators import normalize_category
 
+from service.spend_limit import SpendService
+from service.transactions import TransactionService
+
+from config.exceptions import ServiceError
+from typing import List
+
+from config.logs import setup_logger
+
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+
+logger = setup_logger(__name__)
 
 api_key = os.getenv("GOOGLE_API_KEY")
 
 DATABASE_API_URL = os.getenv("DATABASE_URL")
 CATEGORIES = ["final de semana", "mercado", "farmacia"]
 
-
-# Each category has a budget, so always inform me if my spending is close to the budget for a specific category. Some categories examples: {CATEGORIES}
 
 JEREMIAS_ASSISTANT_PROMPT = """
 You are a finance assistant named Jeremiah. 
@@ -109,21 +113,19 @@ Now, pay attention in these final instructions:
 
 """
 
+# Refactor the way that application raise errors
 
 @normalize_category
 def add_spent(category: str, value: float, tag: str, credit_card: str) -> str:
     """
     Function responsible for recording expenses.
     """
-    logger.info(f"Input category: {category}, Input value: {value}, Input tag: {tag}, Input credit card: {credit_card}")
     try:
-
-        response_category_id = requests.get(
-            url=f"{DATABASE_API_URL}/dimension/budget", params={"items": [category]}, timeout=500
-        )
-        response_category_id.raise_for_status()
-
-        category_id = json.loads(response_category_id.text)[0]["category_id"]
+        logger.info(
+            f"Input category: {category}, Input value: {value}, Input tag: {tag}, Input credit card: {credit_card}")
+        spend_service = SpendService()
+        transaction_service = TransactionService()
+        category_id = spend_service.get(items=[category])
 
         data = {
             "category_id": category_id,
@@ -132,46 +134,30 @@ def add_spent(category: str, value: float, tag: str, credit_card: str) -> str:
             "amount": value,
         }
 
-        response_expense = requests.post(url=f"{DATABASE_API_URL}/fact/transaction", data=json.dumps(data))
-        response_expense.raise_for_status()
-        logger.info(f"Response.text: {response_expense.text}")
-        return response_expense.text
+        response_expense = transaction_service.create(data=data)
+        return response_expense
 
-    except requests.RequestException as e:
-        logger.error(f"Failed to create your expense for category {category}: {e}")
-        return str(e)
-
-    except Exception as e:
-        logger.error(f"Failed to process request: {e}")
-        return str(e)
+    except ServiceError as error:
+        logger.error(f"Failed to create your expense for category {category}: {error}")
+        return str(error)
 
 
 @normalize_category
-def get_spent(categories: Iterable[str] = []) -> str:
+def get_spent(categories: List[str] = []) -> list | str:
     """
     Function responsible for get expenses.
     """
     try:
+        spend_service = SpendService()
+        transaction_service = TransactionService()
+        categories_response = spend_service.get(items=categories)
+        categories_id = [category["category_id"] for category in categories_response]
+        response_expense = transaction_service.get(items=categories_id)
+        return response_expense
 
-        response_categories_id = requests.get(
-            url=f"{DATABASE_API_URL}/dimension/budget", params={"items": categories}, timeout=500
-        )
-        response_categories_id.raise_for_status()
-
-        categories_id = [category["category_id"] for category in json.loads(response_categories_id.text)]
-
-        response_expense = requests.get(url=f"{DATABASE_API_URL}/fact/transaction", params={"items": [categories_id]})
-        response_expense.raise_for_status()
-        logger.info(f"Response.text: {response_expense.text}")
-        return response_expense.text
-
-    except requests.RequestException as e:
-        logger.error(f"Failed to create your expense to categories {categories}: {e}")
-        return str(e)
-
-    except Exception as e:
-        logger.error(f"Failed to process request: {e}")
-        return str(e)
+    except ServiceError as error:
+        logger.error(f"Failed to get your expense for category {categories}: {error}")
+        return str(error)
 
 
 @normalize_category
@@ -181,16 +167,14 @@ def add_budget(category: str, value: float) -> str:
     """
     try:
         logger.info(f"Input category: {category}, Input values: {value}")
-        response = requests.post(
-            url=f"{DATABASE_API_URL}/dimension/budget",
-            data=json.dumps({"category_name": category, "budget": value}),
-        )
-        response.raise_for_status()
-        logger.info(f"Response.text: {response.text}")
-        return response.text
-    except requests.RequestException as e:
-        logger.error(f"Failed to create budget for categories {category}: {e}")
-        return str(e)
+        spend_service = SpendService()
+        response_service = spend_service.create(data={"category_name": category, "budget": value})
+        logger.info(f"Response: {response_service}")
+        return response_service
+
+    except ServiceError as error:
+        logger.error(f"Failed to create budget for categories {category}: {error}")
+        return str(error)
 
 
 @normalize_category
@@ -200,33 +184,29 @@ def update_budget(category: str, value: float) -> str:
     """
     try:
         logger.info(f"Input category: {category}, Input values: {value}")
-        response = requests.put(
-            url=f"{DATABASE_API_URL}/dimension/budget",
-            data=json.dumps({"category_name": category, "budget": value}),
-            timeout=500,
-        )
-        response.raise_for_status()
-        logger.info(f"Response.text: {response.text}")
-        return response.text
-    except requests.RequestException as e:
-        logger.error(f"Failed to update budget for categories {category}: {e}")
-        return str(e)
+        spend_service = SpendService()
+        response_service = spend_service.update(data={"category_name": category, "budget": value})
+        logger.info(f"Response: {response_service}")
+        return response_service
+    except ServiceError as error:
+        logger.error(f"Failed to update budget for categories {category}: {error}")
+        return str(error)
 
 
 @normalize_category
-def get_budget(categories: Iterable[str] = []) -> str:
+def get_budget(categories: Iterable[str] = []) -> list | str:
     """
     Function responsible to get budget value for each or all categories.
     """
     try:
         logger.info(f"Input categories: {categories}")
-        response = requests.get(url=f"{DATABASE_API_URL}/dimension/budget", params={"items": categories}, timeout=500)
-        response.raise_for_status()
-        logger.info(f"Response.text: {response.text}")
-        return response.text
-    except requests.RequestException as e:
-        logger.error(f"Failed to get budget for categories {categories}: {e}")
-        return str(e)
+        spend_service = SpendService()
+        response_service = spend_service.get(items=categories)
+        logger.info(f"Response: {response_service}")
+        return response_service
+    except ServiceError as error:
+        logger.error(f"Failed to get budget for categories {categories}: {error}")
+        return str(error)
 
 
 @normalize_category
@@ -236,16 +216,13 @@ def delete_budget(category: str) -> str:
     """
     try:
         logger.info(f"Input category: {category}")
-        response = requests.delete(
-            url=f"{DATABASE_API_URL}/dimension/budget",
-            data=json.dumps({"category_name": category}),
-        )
-        response.raise_for_status()
-        logger.info(f"Response.text: {response.text}")
-        return response.text
-    except requests.RequestException as e:
-        logger.error(f"Failed to delete category {category}: {e}")
-        return str(e)
+        spend_service = SpendService()
+        response_service = spend_service.delete(data={"category_name": category})
+        logger.info(f"Response: {response_service}")
+        return response_service
+    except ServiceError as error:
+        logger.error(f"Failed to delete category {category}: {error}")
+        return str(error)
 
 
 tools = [get_budget, add_budget, update_budget, delete_budget, get_spent, add_spent]
