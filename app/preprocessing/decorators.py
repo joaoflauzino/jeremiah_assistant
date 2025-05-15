@@ -11,7 +11,11 @@ def normalize_category(func):
 
             # Normalize each category in the list
             normalized_categories = [
-                "".join(c for c in unicodedata.normalize("NFD", category) if unicodedata.category(c) != "Mn").lower()
+                "".join(
+                    c
+                    for c in unicodedata.normalize("NFD", category)
+                    if unicodedata.category(c) != "Mn"
+                ).lower()
                 for category in categories
             ]
 
@@ -23,7 +27,9 @@ def normalize_category(func):
 
             # Normalize category
             normalized_category = "".join(
-                c for c in unicodedata.normalize("NFD", category) if unicodedata.category(c) != "Mn"
+                c
+                for c in unicodedata.normalize("NFD", category)
+                if unicodedata.category(c) != "Mn"
             ).lower()
             # Update the argument with the normalized category
             kwargs["category"] = normalized_category

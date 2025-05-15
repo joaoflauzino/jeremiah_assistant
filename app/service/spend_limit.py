@@ -1,8 +1,8 @@
 from typing import List
 
 from repository.spend_limit import SpendLimitRepository
-
 from service.base import BaseService
+
 
 class SpendService(BaseService):
 

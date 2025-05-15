@@ -1,11 +1,10 @@
-from repository.base import BaseRepository
-
 from typing import List
 
 from config.exceptions import DatabaseError
+from database.register_engine import DimensionSpendFinance, engine
+from repository.base import BaseRepository
 from sqlalchemy.orm import Query, Session
 
-from database.register_engine import DimensionSpendFinance, engine
 
 class SpendLimitRepository(BaseRepository):
     def __init__(self):
@@ -27,7 +26,7 @@ class SpendLimitRepository(BaseRepository):
                 query = self.session.query(DimensionSpendFinance)
                 results = query.all()
             else:
-                found_registers: Query = self.session.query(DimensionSpendFinance).filter(DimensionSpendFinance.category_name.in_(items)) # type: ignore
+                found_registers: Query = self.session.query(DimensionSpendFinance).filter(DimensionSpendFinance.category_name.in_(items))  # type: ignore
                 results = found_registers.all()
             return results
 
@@ -54,13 +53,15 @@ class SpendLimitRepository(BaseRepository):
 
         try:
             dimension_finance_table_instance = DimensionSpendFinance(
-                category_id = data.get("category_id"),
-                category_name = data.get("category_name"),
-                budget = data.get("budget")
+                category_id=data.get("category_id"),
+                category_name=data.get("category_name"),
+                budget=data.get("budget"),
             )
             self.session.add(dimension_finance_table_instance)
             self.session.commit()
-            category_name = getattr(dimension_finance_table_instance, "category_name", "Unknown")
+            category_name = getattr(
+                dimension_finance_table_instance, "category_name", "Unknown"
+            )
             return f"An instance was created. Category: {category_name}"
 
         except DatabaseError as error:
@@ -85,13 +86,13 @@ class SpendLimitRepository(BaseRepository):
         """
         try:
             query: Query = self.session.query(DimensionSpendFinance).filter(
-                DimensionSpendFinance.category_name == data.get("category_name"))
+                DimensionSpendFinance.category_name == data.get("category_name")
+            )
 
             category_id = query.all()[0].category_id
             data.update({"category_id": category_id})
             query.update(data, synchronize_session=False)
             self.session.commit()
-            self.session.close()
             return f"Your budget was updated: {data}"
 
         except DatabaseError as error:
@@ -102,7 +103,6 @@ class SpendLimitRepository(BaseRepository):
 
         finally:
             self.session.close()
-
 
     def delete(self, data: dict):
         """
@@ -120,7 +120,11 @@ class SpendLimitRepository(BaseRepository):
         """
         try:
             found_register = (
-                self.session.query(DimensionSpendFinance).filter(DimensionSpendFinance.category_name == data.get("category_name")).first()
+                self.session.query(DimensionSpendFinance)
+                .filter(
+                    DimensionSpendFinance.category_name == data.get("category_name")
+                )
+                .first()
             )
             self.session.delete(found_register)
             self.session.commit()
@@ -132,3 +136,5 @@ class SpendLimitRepository(BaseRepository):
             self.logger.error(error_message)
             self.session.rollback()
             raise DatabaseError(error_message)
+        finally:
+            self.session.close()

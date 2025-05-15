@@ -1,27 +1,26 @@
 import os
-from typing import Iterable
-
-import google.generativeai as genai
-from dotenv import load_dotenv
-from google.api_core import retry
-from preprocessing.decorators import normalize_category
-
-from service.spend_limit import SpendService
-from service.transactions import TransactionService
-
-from config.exceptions import ServiceError
 from typing import List
 
+import google.generativeai as genai
+from agent_tools import (
+    add_budget,
+    add_spent,
+    delete_budget,
+    get_budget,
+    get_spent,
+    update_budget,
+)
 from config.logs import setup_logger
+from dotenv import load_dotenv
+from google.api_core import retry
 
 load_dotenv()
-
 
 logger = setup_logger(__name__)
 
 api_key = os.getenv("GOOGLE_API_KEY")
 
-DATABASE_API_URL = os.getenv("DATABASE_URL")
+
 CATEGORIES = ["final de semana", "mercado", "farmacia"]
 
 
@@ -113,136 +112,43 @@ Now, pay attention in these final instructions:
 
 """
 
-# Refactor the way that application raise errors
+TOOLS: List = [get_budget, add_budget, update_budget, delete_budget, get_spent, add_spent]
+MODEL_NAME = "gemini-1.5-flash"
+INITIAL_RETRY_DELAY_SECONDS = 30
 
-@normalize_category
-def add_spent(category: str, value: float, tag: str, credit_card: str) -> str:
+def create_model() -> genai.GenerativeModel:
     """
-    Function responsible for recording expenses.
+    Creates and returns the generative model configured with tools.
     """
-    try:
-        logger.info(
-            f"Input category: {category}, Input value: {value}, Input tag: {tag}, Input credit card: {credit_card}")
-        spend_service = SpendService()
-        transaction_service = TransactionService()
-        category_id = spend_service.get(items=[category])
+    return genai.GenerativeModel(MODEL_NAME, tools=TOOLS)
 
-        data = {
-            "category_id": category_id,
-            "tag": tag,
-            "credit_card": credit_card,
-            "amount": value,
-        }
-
-        response_expense = transaction_service.create(data=data)
-        return response_expense
-
-    except ServiceError as error:
-        logger.error(f"Failed to create your expense for category {category}: {error}")
-        return str(error)
-
-
-@normalize_category
-def get_spent(categories: List[str] = []) -> list | str:
+def start_conversation(model: genai.GenerativeModel):
     """
-    Function responsible for get expenses.
+    Starts the chat with initial history and automatic function calling enabled.
     """
-    try:
-        spend_service = SpendService()
-        transaction_service = TransactionService()
-        categories_response = spend_service.get(items=categories)
-        categories_id = [category["category_id"] for category in categories_response]
-        response_expense = transaction_service.get(items=categories_id)
-        return response_expense
-
-    except ServiceError as error:
-        logger.error(f"Failed to get your expense for category {categories}: {error}")
-        return str(error)
-
-
-@normalize_category
-def add_budget(category: str, value: float) -> str:
-    """
-    Function responsible to create budget for category.
-    """
-    try:
-        logger.info(f"Input category: {category}, Input values: {value}")
-        spend_service = SpendService()
-        response_service = spend_service.create(data={"category_name": category, "budget": value})
-        logger.info(f"Response: {response_service}")
-        return response_service
-
-    except ServiceError as error:
-        logger.error(f"Failed to create budget for categories {category}: {error}")
-        return str(error)
-
-
-@normalize_category
-def update_budget(category: str, value: float) -> str:
-    """
-    Function responsible to update budget for category.
-    """
-    try:
-        logger.info(f"Input category: {category}, Input values: {value}")
-        spend_service = SpendService()
-        response_service = spend_service.update(data={"category_name": category, "budget": value})
-        logger.info(f"Response: {response_service}")
-        return response_service
-    except ServiceError as error:
-        logger.error(f"Failed to update budget for categories {category}: {error}")
-        return str(error)
-
-
-@normalize_category
-def get_budget(categories: Iterable[str] = []) -> list | str:
-    """
-    Function responsible to get budget value for each or all categories.
-    """
-    try:
-        logger.info(f"Input categories: {categories}")
-        spend_service = SpendService()
-        response_service = spend_service.get(items=categories)
-        logger.info(f"Response: {response_service}")
-        return response_service
-    except ServiceError as error:
-        logger.error(f"Failed to get budget for categories {categories}: {error}")
-        return str(error)
-
-
-@normalize_category
-def delete_budget(category: str) -> str:
-    """
-    Function responsible to delete budget value for specific category.
-    """
-    try:
-        logger.info(f"Input category: {category}")
-        spend_service = SpendService()
-        response_service = spend_service.delete(data={"category_name": category})
-        logger.info(f"Response: {response_service}")
-        return response_service
-    except ServiceError as error:
-        logger.error(f"Failed to delete category {category}: {error}")
-        return str(error)
-
-
-tools = [get_budget, add_budget, update_budget, delete_budget, get_spent, add_spent]
-model_name = "gemini-1.0-pro-latest"
-model = genai.GenerativeModel(model_name, tools=tools)
-
-convo = model.start_chat(
-    history=[
+    initial_history: List = [
         {"role": "user", "parts": [JEREMIAS_ASSISTANT_PROMPT]},
         {"role": "model", "parts": ["OK I understand. I will do my best!"]},
-    ],
-    enable_automatic_function_calling=True,
-)
+    ]
 
+    return model.start_chat(
+        history=initial_history,
+        enable_automatic_function_calling=True,
+    )
 
-@retry.Retry(initial=30)
-def send_message(message: str) -> str:
+@retry.Retry(initial=INITIAL_RETRY_DELAY_SECONDS)
+def send_message(chat: genai.GenerativeModel.start_chat, message: str) -> str:
+    """
+    Sends a message to the assistant and returns the response.
+    In case of error, retries with configured delay.
+    """
     try:
-        response = convo.send_message(message)
+        response = chat.send_message(message)
         return response.text
     except Exception as error:
-        logger.error(f"Failed to send message: {error}")
-        return str(error)
+        msg = "Failed to call assistant"
+        logger.error(f"{msg}: {error}")
+        return msg
+
+created_model = create_model()
+convo = start_conversation(created_model)

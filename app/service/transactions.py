@@ -1,8 +1,8 @@
 from typing import List
 
 from repository.transactions import TransactionRepository
-
 from service.base import BaseService
+
 
 class TransactionService(BaseService):
 

@@ -1,9 +1,11 @@
-from repository.base import BaseRepository
-from database.register_engine import FactTransactionFinance, engine
-from sqlalchemy.orm import Query, Session
-from typing import List
-from config.exceptions import DatabaseError
 from datetime import datetime
+from typing import List
+
+from config.exceptions import DatabaseError
+from database.register_engine import FactTransactionFinance, engine
+from repository.base import BaseRepository
+from sqlalchemy.orm import Query, Session
+
 
 class TransactionRepository(BaseRepository):
     def __init__(self):
@@ -25,7 +27,7 @@ class TransactionRepository(BaseRepository):
                 query = self.session.query(FactTransactionFinance)
                 results = query.all()
             else:
-                found_registers: Query = self.session.query(FactTransactionFinance).filter(FactTransactionFinance.in_(items)) # type: ignore
+                found_registers: Query = self.session.query(FactTransactionFinance).filter(FactTransactionFinance.in_(items))  # type: ignore
                 results = found_registers.all()
             return results
 
@@ -63,7 +65,9 @@ class TransactionRepository(BaseRepository):
 
             self.session.add(transaction_finance_table_instance)
             self.session.commit()
-            category_name = getattr(transaction_finance_table_instance, "category_name", "Unknown")
+            category_name = getattr(
+                transaction_finance_table_instance, "category_name", "Unknown"
+            )
             return f"An instance was created. Category: {category_name}"
 
         except DatabaseError as error:
@@ -91,7 +95,8 @@ class TransactionRepository(BaseRepository):
         """
         try:
             query: Query = self.session.query(FactTransactionFinance).filter(
-                FactTransactionFinance.category_id == data.get("category_id"))
+                FactTransactionFinance.category_id == data.get("category_id")
+            )
 
             category_id = query.all()[0].category_id
             data.update({"category_id": category_id})
@@ -108,7 +113,6 @@ class TransactionRepository(BaseRepository):
 
         finally:
             self.session.close()
-
 
     # TO DO
     def delete(self, data: dict):
@@ -127,7 +131,9 @@ class TransactionRepository(BaseRepository):
         """
         try:
             found_register = (
-                self.session.query(FactTransactionFinance).filter(FactTransactionFinance.category_id == data.get("category_id")).first()
+                self.session.query(FactTransactionFinance)
+                .filter(FactTransactionFinance.category_id == data.get("category_id"))
+                .first()
             )
             self.session.delete(found_register)
             self.session.commit()
@@ -139,4 +145,3 @@ class TransactionRepository(BaseRepository):
             self.logger.error(error_message)
             self.session.rollback()
             raise DatabaseError(error_message)
-

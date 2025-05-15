@@ -5,15 +5,22 @@ description = ""
 authors = ["joaoflauzino"]
 readme = "README.md"
 
+[virtualenvs]
+in-project = true
+
 [tool.poetry.dependencies]
 python = "^3.12"
-google-generativeai = "^0.6.0"
 python-telegram-bot = "^21.3"
 fastapi = "^0.111.0"
 sqlalchemy = "^2.0.30"
 psycopg2-binary = "^2.9.9"
 types-requests = "^2.32.0.20240602"
 sqlalchemy-stubs = "^0.4"
+langchain-ollama = "^0.2.2"
+langchain = "^0.3.13"
+langchain-community = "^0.3.13"
+langchain-google-vertexai = "^2.0.9"
+google-generativeai = "^0.8.5"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.25.0"
@@ -23,15 +30,12 @@ bandit = "^1.7.8"
 pre-commit = "^3.7.1"
 mypy = "^1.10.0"
 ruff = "^0.4.9"
-ollama = "^0.2.1"
-langchain-community = "^0.2.7"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-# Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
     ".direnv",
@@ -65,46 +69,29 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.8
-target-version = "py38"
+
+target-version = "py312"
 
 [tool.ruff.lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
 select = ["E4", "E7", "E9", "F"]
 ignore = []
-
-# Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
-
-# Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
-# Like Black, use double quotes for strings.
 quote-style = "double"
-
-# Like Black, indent with spaces, rather than tabs.
 indent-style = "space"
-
-# Like Black, respect magic trailing commas.
 skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
-
-# Enable auto-formatting of code examples in docstrings. Markdown,
-# reStructuredText code/literal blocks and doctests are all supported.
-#
-# This is currently disabled by default, but it is planned for this
-# to be opt-out in the future.
 docstring-code-format = false
-
-# Set the line length limit used when formatting code snippets in
-# docstrings.
-#
-# This only has an effect when the `docstring-code-format` setting is
-# enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+force-single-line = false
+combine-as-imports = true
+
+[tool.taskipy.tasks]
+lint = "ruff check --fix app/ && black app/"
+imports = "ruff check --select I --fix app/"

@@ -1,4 +1,3 @@
-import os
 from typing import Type
 
 from sqlalchemy import (
@@ -12,11 +11,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 
-path = os.getcwd()
-
 # Creating database engine
 engine = create_engine("postgresql://postgres:postgres@localhost:5432/assistant_db")
-
 
 Base: Type = declarative_base()
 
@@ -31,7 +27,9 @@ class DimensionSpendFinance(Base):
 class FactTransactionFinance(Base):
     __tablename__ = "fact_finance"
     transaction_id = Column(Integer, primary_key=True, autoincrement=True)
-    category_id = Column(Integer, ForeignKey("dimension_finance.category_id"), nullable=False)
+    category_id = Column(
+        Integer, ForeignKey("dimension_finance.category_id"), nullable=False
+    )
     tag = Column(String, nullable=False)
     datetime_transaction = Column(DateTime, nullable=False)
     credit_card = Column(String, nullable=False)

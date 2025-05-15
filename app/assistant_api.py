@@ -1,11 +1,11 @@
-from fastapi import FastAPI, HTTPException, status
 import logging
-from finance_agent.agent import send_message
-import uvicorn
-from fastapi.encoders import jsonable_encoder
-from validation_schema.assistant.validate import Assistant
-from fastapi.responses import PlainTextResponse
 
+import uvicorn
+from fastapi import FastAPI, HTTPException, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import PlainTextResponse
+from finance_agent.agent import send_message
+from validation_schema.assistant.validate import Assistant
 
 app = FastAPI()
 
@@ -13,7 +13,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@app.post("/assistant", status_code=status.HTTP_200_OK, response_class=PlainTextResponse)
+@app.post(
+    "/assistant", status_code=status.HTTP_200_OK, response_class=PlainTextResponse
+)
 def gemini_assistant(text: Assistant) -> str:
     try:
         transformed_text = jsonable_encoder(text)
