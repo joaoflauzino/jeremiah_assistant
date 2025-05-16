@@ -5,13 +5,11 @@ from typing import Iterable, List
 import requests
 from config.logs import setup_logger
 from config.request_exceptions import handle_request_exceptions
-from preprocessing.decorators import normalize_category
 
 logger = setup_logger(__name__)
 
 DATABASE_API_URL = os.getenv("DATABASE_URL")
 
-@normalize_category
 @handle_request_exceptions(fields_to_return=["category", "value", "tag", "credit_card"])
 def add_spent(category: str, value: float, tag: str, credit_card: str) -> str:
     """
@@ -21,16 +19,30 @@ def add_spent(category: str, value: float, tag: str, credit_card: str) -> str:
         f"Input category: {category}, Input value: {value}, Input tag: {tag}, Input credit card: {credit_card}"
     )
 
+    response_category_id = requests.get(
+        url=f"{DATABASE_API_URL}/dimension/budget",
+        params={"items": [category]},
+        timeout=500,
+    )
+
+    category_id = json.loads(response_category_id.text)[0]["category_id"]
+
     response = requests.post(
         url=f"{DATABASE_API_URL}/transaction/budget",
-        data=json.dumps({"category_name": category, "budget": value}),
+        data=json.dumps(
+            {
+                "category_id": category_id,
+                "tag": tag,
+                "credit_card": credit_card,
+                "amount": value
+            }
+        ),
     )
     response.raise_for_status()
     logger.info(f"Response.text: {response.text}")
     return response.text
 
 
-@normalize_category
 @handle_request_exceptions(fields_to_return=["categories"])
 def get_spent(categories: List[str] = []) -> list | str:
     """
@@ -44,11 +56,10 @@ def get_spent(categories: List[str] = []) -> list | str:
     return response.text
 
 
-@normalize_category
 @handle_request_exceptions(fields_to_return=["category", "value"])
 def add_budget(category: str, value: float) -> str:
     """
-    Function responsible to create budget for category.
+    Function responsible to create budget for category or create a new one.
     """
     logger.info(f"Input category: {category}, Input values: {value}")
     response = requests.post(
@@ -60,7 +71,6 @@ def add_budget(category: str, value: float) -> str:
     return response.text
 
 
-@normalize_category
 @handle_request_exceptions(fields_to_return=["category", "value"])
 def update_budget(category: str, value: float) -> str:
     """
@@ -77,7 +87,6 @@ def update_budget(category: str, value: float) -> str:
     return response.text
 
 
-@normalize_category
 @handle_request_exceptions(fields_to_return=["categories"])
 def get_budget(categories: Iterable[str] = []) -> list | str:
     """
@@ -94,7 +103,6 @@ def get_budget(categories: Iterable[str] = []) -> list | str:
     return response.text
 
 
-@normalize_category
 @handle_request_exceptions(fields_to_return=["category"])
 def delete_budget(category: str) -> str:
     """

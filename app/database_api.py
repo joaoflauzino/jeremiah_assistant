@@ -66,14 +66,11 @@ def read_spent(items: Union[List[Any]] = Query(default=[1])) -> list | str:
 @app.post("/transaction/budget", status_code=status.HTTP_201_CREATED)
 def add_spent(data: RegisterTransaction) -> str:
     data_decoded = jsonable_encoder(data)
-    spend_service = SpendService()
-    category_id = spend_service.get(items=data_decoded.get("category_id"))
-
     data = {
-        "category_id": category_id,
+        "category_id": data_decoded.get("category_id"),
         "tag": data_decoded.get("tag"),
         "credit_card": data_decoded.get("credit_card"),
-        "amount": data_decoded.get("value"),
+        "amount": data_decoded.get("amount"),
     }
 
     transaction_service = TransactionService()

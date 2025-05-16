@@ -9,7 +9,6 @@ def normalize_category(func):
         if "categories" in kwargs:
             categories = kwargs["categories"]
 
-            # Normalize each category in the list
             normalized_categories = [
                 "".join(
                     c
@@ -19,19 +18,16 @@ def normalize_category(func):
                 for category in categories
             ]
 
-            # Update the argument with the normalized categories
             kwargs["categories"] = normalized_categories
 
         elif "category" in kwargs:
             category = kwargs["category"]
 
-            # Normalize category
             normalized_category = "".join(
                 c
                 for c in unicodedata.normalize("NFD", category)
                 if unicodedata.category(c) != "Mn"
             ).lower()
-            # Update the argument with the normalized category
             kwargs["category"] = normalized_category
 
         return func(*args, **kwargs)

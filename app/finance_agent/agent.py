@@ -2,7 +2,7 @@ import os
 from typing import List
 
 import google.generativeai as genai
-from agent_tools import (
+from finance_agent.agent_tools import (
     add_budget,
     add_spent,
     delete_budget,
@@ -33,7 +33,7 @@ Your goal is:
     - Help me to calculate expenses for categories and tell me how much I spent in a specific category or for all categories. 
     - Help me to register expenses for each category.
 
-And 2 funtcion to expenses:
+And 2 funtcion to spents:
     add_spent
     get_spent
 
@@ -137,13 +137,13 @@ def start_conversation(model: genai.GenerativeModel):
     )
 
 @retry.Retry(initial=INITIAL_RETRY_DELAY_SECONDS)
-def send_message(chat: genai.GenerativeModel.start_chat, message: str) -> str:
+def send_message(message: str) -> str:
     """
     Sends a message to the assistant and returns the response.
     In case of error, retries with configured delay.
     """
     try:
-        response = chat.send_message(message)
+        response = convo.send_message(message)
         return response.text
     except Exception as error:
         msg = "Failed to call assistant"
