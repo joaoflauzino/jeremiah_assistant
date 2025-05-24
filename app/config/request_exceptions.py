@@ -1,6 +1,8 @@
 import logging
 from functools import wraps
 
+from config.exceptions import DatabaseError, SpendServiceError
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -56,3 +58,21 @@ def handle_request_exceptions(fields_to_return=None, re_raise=False):
         return wrapper
 
     return decorator
+
+def handle_service_errors(action_description: str):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            try:
+                return fn(self, *args, **kwargs)
+            except DatabaseError:
+                msg = f"{action_description} | Erro de banco de dados"
+                self.logger.error(msg)
+                raise SpendServiceError(msg)
+            except Exception:
+                msg = f"{action_description} | Erro inesperado"
+                self.logger.error(msg)
+                raise SpendServiceError(msg)
+        return wrapper
+    return decorator
+

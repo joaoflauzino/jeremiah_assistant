@@ -53,14 +53,16 @@ def delete_budget(data: Delete):
 
 
 @app.get("/transaction/budget", status_code=status.HTTP_200_OK)
-def read_spent(items: Union[List[Any]] = Query(default=[1])) -> list | str:
+def read_spent(items: Union[List[Any]] = Query(default=[])) -> list | str:
     spend_service = SpendService()
-    categories_response = spend_service.get(items=items)
+    categories_before_response = spend_service.get(items=items)
 
     transaction_service = TransactionService()
-    categories_id = [category["category_id"] for category in categories_response]
+    categories_id = [category.to_dict()["category_id"] for category in categories_before_response]
     response_transaction = transaction_service.get(items=categories_id)
-    return response_transaction
+
+    categories_after_response = spend_service.get(items=categories_id)
+    return [transaction.to_dict() for transaction in response_transaction]
 
 
 @app.post("/transaction/budget", status_code=status.HTTP_201_CREATED)

@@ -27,7 +27,7 @@ class TransactionRepository(BaseRepository):
                 query = self.session.query(FactTransactionFinance)
                 results = query.all()
             else:
-                found_registers: Query = self.session.query(FactTransactionFinance).filter(FactTransactionFinance.in_(items))  # type: ignore
+                found_registers: Query = self.session.query(FactTransactionFinance).filter(FactTransactionFinance.category_id.in_(items))  # type: ignore
                 results = found_registers.all()
             return results
 

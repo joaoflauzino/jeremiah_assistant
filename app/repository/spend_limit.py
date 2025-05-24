@@ -11,6 +11,7 @@ class SpendLimitRepository(BaseRepository):
         super().__init__()
         self.session = Session(bind=engine, expire_on_commit=False)
 
+
     def get(self, items: List[int]):
         """
         Responsible to get spend limit event.

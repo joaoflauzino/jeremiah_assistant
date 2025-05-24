@@ -23,6 +23,13 @@ class DimensionSpendFinance(Base):
     category_name = Column(String, nullable=False)
     budget = Column(Float, nullable=False)
 
+    def to_dict(self) -> dict:
+        return {
+            "category_id": self.category_id,
+            "category_name": self.category_name,
+            "budget": self.budget,
+        }
+
 
 class FactTransactionFinance(Base):
     __tablename__ = "fact_finance"
@@ -34,6 +41,16 @@ class FactTransactionFinance(Base):
     datetime_transaction = Column(DateTime, nullable=False)
     credit_card = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "transaction_id": self.transaction_id,
+            "category_id": self.category_id,
+            "tag": self.tag,
+            "datetime_transaction": self.datetime_transaction,
+            "credit_card": self.credit_card,
+            "amount": self.amount
+        }
 
 
 def create_database_engine() -> None:
