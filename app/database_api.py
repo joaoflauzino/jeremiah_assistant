@@ -12,9 +12,13 @@ from validation_schema.database.validate import (
     RegisterTransaction,
     RegisterUpdateTransaction,
 )
+from config.exceptions import NotFoundError, SpendServiceError
+from exceptions_handlers.handlers import not_found_error_handler, internal_server_error
 
 app = FastAPI()
 
+app.add_exception_handler(NotFoundError, not_found_error_handler)
+app.add_exception_handler(SpendServiceError, internal_server_error)
 
 @app.get("/health")
 def root():
@@ -49,7 +53,7 @@ def delete_budget(data: Delete):
     data_decoded = jsonable_encoder(data)
     spend_service = SpendService()
     response_service = spend_service.delete(data=data_decoded)
-    return f" These registers were deleted: {response_service}"
+    return f"These registers were deleted: {response_service}"
 
 
 @app.get("/transaction/budget", status_code=status.HTTP_200_OK)

@@ -1,147 +1,127 @@
 from datetime import datetime
 from typing import List
 
-from config.exceptions import DatabaseError
+from config.exceptions import TransactionRepositoryError
 from database.register_engine import FactTransactionFinance, engine
 from repository.base import BaseRepository
-from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class TransactionRepository(BaseRepository):
     def __init__(self):
         super().__init__()
-        self.session = Session(bind=engine, expire_on_commit=False)
 
     def get(self, items: List[int]):
         """
-        Responsible to get transaction event.
+        Responsible to get transaction events.
+
         Args:
-        ----
-            Items (list): a list of items.
-        Return:
-        ------
-            (dict): Expense transactions
+            items (list): A list of category IDs.
+
+        Returns:
+            List[FactTransactionFinance]: Matching transaction records.
         """
         try:
-            if not items:
-                query = self.session.query(FactTransactionFinance)
-                results = query.all()
-            else:
-                found_registers: Query = self.session.query(FactTransactionFinance).filter(FactTransactionFinance.category_id.in_(items))  # type: ignore
-                results = found_registers.all()
-            return results
+            with Session(bind=engine, expire_on_commit=False) as session:
+                query = session.query(FactTransactionFinance)
+                if items:
+                    query = query.filter(FactTransactionFinance.category_id.in_(items))
+                return query.all()
 
-        except DatabaseError as error:
+        except SQLAlchemyError as error:
             error_message = f"Error to get registers from transactions: {error}"
             self.logger.error(error_message)
-            raise DatabaseError(error_message)
+            raise TransactionRepositoryError(error_message)
 
-        finally:
-            self.session.close()
-
-    def create(self, data: dict):
+    def create(self, data: dict) -> str:
         """
         Responsible to create expense transactions.
 
         Args:
-        ----
-            data (object): Expense transaction.
+            data (dict): Expense transaction.
 
-        Return:
-        ------
-            (str): returns a message showing which category was inserted.
+        Returns:
+            str: Confirmation message.
         """
-
         try:
-            transaction_date = datetime.now()
+            with Session(bind=engine, expire_on_commit=False) as session:
+                transaction = FactTransactionFinance(
+                    category_id=data.get("category_id"),
+                    tag=data.get("tag"),
+                    datetime_transaction=datetime.now(),
+                    credit_card=data.get("credit_card"),
+                    amount=data.get("amount"),
+                )
+                session.add(transaction)
+                session.commit()
 
-            transaction_finance_table_instance = FactTransactionFinance(
-                category_id=data.get("category_id"),
-                tag=data.get("tag"),
-                datetime_transaction=transaction_date,
-                credit_card=data.get("credit_card"),
-                amount=data.get("amount"),
-            )
+                category_name = getattr(transaction, "category_name", "Unknown")
+                return f"An instance was created. Category: {category_name}"
 
-            self.session.add(transaction_finance_table_instance)
-            self.session.commit()
-            category_name = getattr(
-                transaction_finance_table_instance, "category_name", "Unknown"
-            )
-            return f"An instance was created. Category: {category_name}"
-
-        except DatabaseError as error:
+        except SQLAlchemyError as error:
             error_message = f"Error to create transaction: {error}"
             self.logger.error(error_message)
-            self.session.rollback()
-            raise DatabaseError(error_message)
+            raise TransactionRepositoryError(error_message)
 
-        finally:
-            self.session.close()
-
-    # TO DO
-    def update(self, data: dict):
+    def update(self, data: dict) -> str:
         """
         Responsible to update expense transactions.
 
         Args:
-        ----
-            data (dict): a dict to update instance.
-            TableObject (object): SqlAlchemy table object.
+            data (dict): Data to update transaction.
 
-        Return:
-        ------
-            (str): A message showing the updated register.
+        Returns:
+            str: Confirmation message.
         """
         try:
-            query: Query = self.session.query(FactTransactionFinance).filter(
-                FactTransactionFinance.category_id == data.get("category_id")
-            )
+            with Session(bind=engine, expire_on_commit=False) as session:
+                entry = (
+                    session.query(FactTransactionFinance)
+                    .filter(FactTransactionFinance.category_id == data.get("category_id"))
+                    .first()
+                )
 
-            category_id = query.all()[0].category_id
-            data.update({"category_id": category_id})
-            query.update(data, synchronize_session=False)
-            self.session.commit()
-            self.session.close()
-            return f"Your transaction was updated: {data}"
+                if not entry:
+                    raise TransactionRepositoryError("Transaction not found for update.")
 
-        except DatabaseError as error:
+                session.query(FactTransactionFinance).filter_by(category_id=entry.category_id).update(data)
+                session.commit()
+
+                return f"Your transaction was updated: {data}"
+
+        except SQLAlchemyError as error:
             error_message = f"Error to update transaction: {error}"
             self.logger.error(error_message)
-            self.session.rollback()
-            raise DatabaseError(error_message)
+            raise TransactionRepositoryError(error_message)
 
-        finally:
-            self.session.close()
-
-    # TO DO
-    def delete(self, data: dict):
+    def delete(self, data: dict) -> str:
         """
         Responsible to delete expense transactions.
 
         Args:
-        ----
-            register (dict): A dict with category and subcategory id
-            TableObject (object): SqlAlchemy table object
+            data (dict): Contains category_id to identify record.
 
-        Return:
-        ------
-            (str): returns a message showing which
-            category and subcategory were deleted.
+        Returns:
+            str: Confirmation message.
         """
         try:
-            found_register = (
-                self.session.query(FactTransactionFinance)
-                .filter(FactTransactionFinance.category_id == data.get("category_id"))
-                .first()
-            )
-            self.session.delete(found_register)
-            self.session.commit()
-            self.session.close()
-            return f"Instance was deleted: {data}"
+            with Session(bind=engine, expire_on_commit=False) as session:
+                entry = (
+                    session.query(FactTransactionFinance)
+                    .filter(FactTransactionFinance.category_id == data.get("category_id"))
+                    .first()
+                )
 
-        except DatabaseError as error:
+                if not entry:
+                    raise TransactionRepositoryError("Transaction not found for deletion.")
+
+                session.delete(entry)
+                session.commit()
+
+                return f"Instance was deleted: {data}"
+
+        except SQLAlchemyError as error:
             error_message = f"Error to delete transaction: {error}"
             self.logger.error(error_message)
-            self.session.rollback()
-            raise DatabaseError(error_message)
+            raise TransactionRepositoryError(error_message)

@@ -1,22 +1,25 @@
 import logging
 from functools import wraps
 
-from config.exceptions import DatabaseError, SpendServiceError
-
+from config.exceptions import SpendRepositoryError, SpendServiceError, NotFoundError
 import requests
 
 logger = logging.getLogger(__name__)
 
-
 def handle_request_exceptions(fields_to_return=None, re_raise=False):
     """
-    Decorator para capturar exceções em funções que fazem requisições HTTP
-    e retornar campos específicos em caso de erro.
+    Decorator to handle exceptions in functions that perform HTTP requests.
 
-    - fields_to_return: lista de nomes dos parâmetros que devem ser incluídos na resposta de erro.
-    - re_raise: se True, relança a exceção após o log.
+    Logs different types of `requests` exceptions (e.g., HTTPError, Timeout, etc.)
+    and optionally returns a dictionary with selected input fields and an error message.
+
+    Args:
+        fields_to_return (list[str], optional): List of input parameter names to include in the error response.
+        re_raise (bool, optional): If True, re-raises the exception after logging it. Defaults to False.
+
+    Returns:
+        function: Wrapped function with exception handling.
     """
-
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -59,20 +62,32 @@ def handle_request_exceptions(fields_to_return=None, re_raise=False):
 
     return decorator
 
+
 def handle_service_errors(action_description: str):
+    """
+    Decorator to handle exceptions in service layer methods.
+
+    Captures exceptions related to repository calls or general service errors,
+    logs a custom action description, and raises a standardized `SpendServiceError`.
+
+    Args:
+        action_description (str): A message describing the action being attempted. Used in logs and errors.
+
+    Returns:
+        function: Wrapped function with error handling and logging.
+    """
     def decorator(fn):
         @wraps(fn)
         def wrapper(self, *args, **kwargs):
             try:
                 return fn(self, *args, **kwargs)
-            except DatabaseError:
-                msg = f"{action_description} | Erro de banco de dados"
-                self.logger.error(msg)
-                raise SpendServiceError(msg)
+            except SpendRepositoryError:
+                self.logger.error(action_description)
+                raise SpendServiceError(action_description)
+            except NotFoundError:
+                raise NotFoundError(action_description)
             except Exception:
-                msg = f"{action_description} | Erro inesperado"
-                self.logger.error(msg)
-                raise SpendServiceError(msg)
+                self.logger.error(action_description)
+                raise SpendServiceError(action_description)
         return wrapper
     return decorator
-

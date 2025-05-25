@@ -1,141 +1,125 @@
-from typing import List
+from typing import List, Optional
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
-from config.exceptions import DatabaseError
+from config.exceptions import SpendRepositoryError, NotFoundError
 from database.register_engine import DimensionSpendFinance, engine
 from repository.base import BaseRepository
-from sqlalchemy.orm import Query, Session
 
 
 class SpendLimitRepository(BaseRepository):
     def __init__(self):
         super().__init__()
-        self.session = Session(bind=engine, expire_on_commit=False)
 
-
-    def get(self, items: List[int]):
+    def get(self, items: Optional[List[int]] = None):
         """
-        Responsible to get spend limit event.
+        Fetch spend limit records. If no items are provided, returns all.
+
         Args:
-        ----
-            Items (list): a list of items.
-        Return:
-        ------
-            (dict): Spend transactions
+            items (List[int], optional): A list of category IDs to filter.
+
+        Returns:
+            List[DimensionSpendFinance]: Matching records.
         """
         try:
-            if not items:
-                query = self.session.query(DimensionSpendFinance)
-                results = query.all()
-            else:
-                found_registers: Query = self.session.query(DimensionSpendFinance).filter(DimensionSpendFinance.category_name.in_(items))  # type: ignore
-                results = found_registers.all()
-            return results
+            with Session(bind=engine, expire_on_commit=False) as session:
+                query = session.query(DimensionSpendFinance)
+                if items:
+                    query = query.filter(DimensionSpendFinance.category_name.in_(items))  # type: ignore
+                return query.all()
 
-        except DatabaseError as error:
-            error_message = f"Error to get registers from spend limit: {error}"
+        except SQLAlchemyError as error:
+            error_message = f"Error fetching spend limit records: {error}"
             self.logger.error(error_message)
-            raise DatabaseError(error_message)
+            raise SpendRepositoryError(error_message)
 
-        finally:
-            self.session.close()
-
-    def create(self, data: dict):
+    def create(self, data: dict) -> str:
         """
-        Responsible to create expense transactions.
+        Create a new spend limit entry.
 
         Args:
-        ----
-            data (object): Expense transaction.
+            data (dict): Expense transaction data.
 
-        Return:
-        ------
-            (str): returns a message showing which category was inserted.
-        """
-
-        try:
-            dimension_finance_table_instance = DimensionSpendFinance(
-                category_id=data.get("category_id"),
-                category_name=data.get("category_name"),
-                budget=data.get("budget"),
-            )
-            self.session.add(dimension_finance_table_instance)
-            self.session.commit()
-            category_name = getattr(
-                dimension_finance_table_instance, "category_name", "Unknown"
-            )
-            return f"An instance was created. Category: {category_name}"
-
-        except DatabaseError as error:
-            error_message = f"Error to create budget: {error}"
-            self.logger.error(error_message)
-            self.session.rollback()
-            raise DatabaseError(error_message)
-
-        finally:
-            self.session.close()
-
-    def update(self, data: dict):
-        """
-        Responsible to update expense transactions.
-
-        Args:
-        ----
-            data (dict): a dict to update budget.
-        Return:
-        ------
-            (str): A message showing the updated register.
+        Returns:
+            str: Confirmation message.
         """
         try:
-            query: Query = self.session.query(DimensionSpendFinance).filter(
-                DimensionSpendFinance.category_name == data.get("category_name")
-            )
-
-            category_id = query.all()[0].category_id
-            data.update({"category_id": category_id})
-            query.update(data, synchronize_session=False)
-            self.session.commit()
-            return f"Your budget was updated: {data}"
-
-        except DatabaseError as error:
-            error_message = f"Error to update budget: {error}"
-            self.logger.error(error_message)
-            self.session.rollback()
-            raise DatabaseError(error_message)
-
-        finally:
-            self.session.close()
-
-    def delete(self, data: dict):
-        """
-        Responsible to delete expense transactions.
-
-        Args:
-        ----
-            register (dict): A dict with category and subcategory id
-            TableObject (object): SqlAlchemy table object
-
-        Return:
-        ------
-            (str): returns a message showing which
-            category was deleted.
-        """
-        try:
-            found_register = (
-                self.session.query(DimensionSpendFinance)
-                .filter(
-                    DimensionSpendFinance.category_name == data.get("category_name")
+            with Session(bind=engine, expire_on_commit=False) as session:
+                entry = DimensionSpendFinance(
+                    category_id=data.get("category_id"),
+                    category_name=data.get("category_name"),
+                    budget=data.get("budget"),
                 )
-                .first()
-            )
-            self.session.delete(found_register)
-            self.session.commit()
-            self.session.close()
-            return f"Budget was deleted: {data}"
+                session.add(entry)
+                session.commit()
 
-        except DatabaseError as error:
-            error_message = f"Error to delete budget: {error}"
+                category_name = getattr(entry, "category_name", "Unknown")
+                return f"An instance was created. Category: {category_name}"
+
+        except SQLAlchemyError as error:
+            error_message = f"Error creating budget entry: {error}"
             self.logger.error(error_message)
-            self.session.rollback()
-            raise DatabaseError(error_message)
-        finally:
-            self.session.close()
+            raise SpendRepositoryError(error_message)
+
+    def update(self, data: dict) -> str:
+        """
+        Update an existing spend limit entry.
+
+        Args:
+            data (dict): Data to update the budget.
+
+        Returns:
+            str: Confirmation message.
+        """
+        try:
+            with Session(bind=engine, expire_on_commit=False) as session:
+                entry = (
+                    session.query(DimensionSpendFinance)
+                    .filter(DimensionSpendFinance.category_name == data.get("category_name"))
+                    .first()
+                )
+
+                if not entry:
+                    raise SpendRepositoryError("Category not found for update.")
+
+                data["category_id"] = entry.category_id
+                session.query(DimensionSpendFinance).filter_by(category_id=entry.category_id).update(data)
+                session.commit()
+
+                return f"Budget updated: {data}"
+
+        except SQLAlchemyError as error:
+            error_message = f"Error updating budget: {error}"
+            self.logger.error(error_message)
+            raise SpendRepositoryError(error_message)
+
+    def delete(self, data: dict) -> str:
+        """
+        Delete a spend limit entry.
+
+        Args:
+            data (dict): Contains the category_name to delete.
+
+        Returns:
+            str: Confirmation message.
+        """
+        try:
+            with Session(bind=engine, expire_on_commit=False) as session:
+                entry = (
+                    session.query(DimensionSpendFinance)
+                    .filter(DimensionSpendFinance.category_name == data.get("category_name"))
+                    .first()
+                )
+
+                if not entry:
+                    raise NotFoundError("Category not found for deletion.")
+
+                session.delete(entry)
+                session.commit()
+
+                return f"Budget deleted: {data}"
+
+        except SQLAlchemyError as error:
+            error_message = f"Error deleting budget: {error}"
+            self.logger.error(error_message)
+            raise SpendRepositoryError(error_message)

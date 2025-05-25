@@ -1,10 +1,9 @@
-class RepositoryError(Exception):
-    """Base exception class for repository errors."""
+class SpendRepositoryError(Exception):
+    """Base exception class for spend repository errors."""
     ...
 
-
-class DatabaseError(RepositoryError):
-    """Raised when a database operation fails."""
+class TransactionRepositoryError(Exception):
+    """Base exception class for transaction repository errors."""
     ...
 
 class NotFoundError(Exception):
