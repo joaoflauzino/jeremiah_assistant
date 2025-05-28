@@ -1,8 +1,10 @@
 import logging
 from functools import wraps
 
-from config.exceptions import SpendRepositoryError, SpendServiceError, NotFoundError
+from config.exceptions import SpendRepositoryError, SpendServiceError, SpendIntegrityServiceError, NotFoundError, SpendIntegrityRepositoryError
 import requests
+from typing import Callable
+import inspect
 
 logger = logging.getLogger(__name__)
 
@@ -62,32 +64,43 @@ def handle_request_exceptions(fields_to_return=None, re_raise=False):
 
     return decorator
 
+def handle_service_errors(fn):
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return fn(self, *args, **kwargs)
+        except SpendIntegrityRepositoryError as error:
+            self.logger.error(error)
+            raise SpendIntegrityServiceError(
+                message=error,
+                user_message=f"Categoria '{kwargs.get("data").get("category_name")}' já existe!"
+            )
+        except SpendRepositoryError as error:
+            self.logger.error(error)
+            raise SpendServiceError(
+                message=error,
+                user_message="Houve algum problema ao realizar operação com a categoria especificada! Contate o administrador."
+            )
+        except NotFoundError as error:
+            self.logger.error(error)
 
-def handle_service_errors(action_description: str):
-    """
-    Decorator to handle exceptions in service layer methods.
+            data = kwargs.get("data")
+            items = kwargs.get("items")
 
-    Captures exceptions related to repository calls or general service errors,
-    logs a custom action description, and raises a standardized `SpendServiceError`.
+            if not data:
+                user_message = f"Categorias '{', '.join(items)}' não encontradas." if items else "Categorias não encontradas."
+            else:
+                category_name = data.get("category_name", "desconhecida")
+                user_message = f"Categoria '{category_name}' não encontrada."
 
-    Args:
-        action_description (str): A message describing the action being attempted. Used in logs and errors.
-
-    Returns:
-        function: Wrapped function with error handling and logging.
-    """
-    def decorator(fn):
-        @wraps(fn)
-        def wrapper(self, *args, **kwargs):
-            try:
-                return fn(self, *args, **kwargs)
-            except SpendRepositoryError:
-                self.logger.error(action_description)
-                raise SpendServiceError(action_description)
-            except NotFoundError:
-                raise NotFoundError(action_description)
-            except Exception:
-                self.logger.error(action_description)
-                raise SpendServiceError(action_description)
-        return wrapper
-    return decorator
+            raise NotFoundError(
+                message=error,
+                user_message=user_message
+            )
+        except Exception as error:
+            self.logger.error(error)
+            raise SpendServiceError(
+                message=error,
+                user_message="Houve algum problema inesperado! Contate o administrador."
+            )
+    return wrapper

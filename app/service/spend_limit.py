@@ -12,7 +12,7 @@ class SpendService(BaseService):
         super().__init__()
         self.repository = SpendLimitRepository()
 
-    @handle_service_errors("Categoria(s) informadas podem não existir")
+    @handle_service_errors
     def get(self, items: List[str | int]) -> list:
         """
         Retrieve spend limit records for the provided category names or IDs.
@@ -32,7 +32,7 @@ class SpendService(BaseService):
             raise NotFoundError(f"Nenhuma categoria encontrada com os nomes {' '.join(items)}")
         return repository_response_transformed
 
-    @handle_service_errors("Algum erro aconteceu ao tentar criar o limite de gastos, contate o administrador.")
+    @handle_service_errors
     def create(self, data: dict) -> str:
         """
         Create a new spend limit entry.
@@ -46,7 +46,7 @@ class SpendService(BaseService):
         create_repository_response = self.repository.create(data=data)
         return create_repository_response
 
-    @handle_service_errors("Algum erro aconteceu ao tentar atualizar o limite de gastos, contate o administrador.")
+    @handle_service_errors
     def update(self, data: dict) -> str:
         """
         Update an existing spend limit entry.
@@ -57,10 +57,10 @@ class SpendService(BaseService):
         Returns:
             str: Confirmation message from the repository.
         """
-        update_repository_response = self.repository.update(data=data)  # Corrigido: era create
+        update_repository_response = self.repository.update(data=data)
         return update_repository_response
 
-    @handle_service_errors("Algum erro aconteceu ao tentar deletar o limite de gastos, contate o administrador.")
+    @handle_service_errors
     def delete(self, data: dict) -> str:
         """
         Delete an existing spend limit entry.

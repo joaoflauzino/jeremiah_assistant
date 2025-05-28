@@ -56,7 +56,7 @@ class TransactionRepository(BaseRepository):
                 session.add(transaction)
                 session.commit()
 
-                category_name = getattr(transaction, "category_name", "Unknown")
+                category_name = data.get("")
                 return f"An instance was created. Category: {category_name}"
 
         except SQLAlchemyError as error:

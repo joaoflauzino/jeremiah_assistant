@@ -1,16 +1,14 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
-from config.exceptions import SpendRepositoryError, NotFoundError
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+
+from config.exceptions import SpendRepositoryError, SpendIntegrityRepositoryError, NotFoundError
 from database.register_engine import DimensionSpendFinance, engine
 from repository.base import BaseRepository
 
 
 class SpendLimitRepository(BaseRepository):
-    def __init__(self):
-        super().__init__()
-
     def get(self, items: Optional[List[int]] = None):
         """
         Fetch spend limit records. If no items are provided, returns all.
@@ -25,11 +23,11 @@ class SpendLimitRepository(BaseRepository):
             with Session(bind=engine, expire_on_commit=False) as session:
                 query = session.query(DimensionSpendFinance)
                 if items:
-                    query = query.filter(DimensionSpendFinance.category_name.in_(items))  # type: ignore
+                    query = query.filter(DimensionSpendFinance.category_name.in_(items))
                 return query.all()
 
         except SQLAlchemyError as error:
-            error_message = f"Error fetching spend limit records: {error}"
+            error_message = f"Erro ao recuperar limite de gastos: {error}"
             self.logger.error(error_message)
             raise SpendRepositoryError(error_message)
 
@@ -54,12 +52,17 @@ class SpendLimitRepository(BaseRepository):
                 session.commit()
 
                 category_name = getattr(entry, "category_name", "Unknown")
-                return f"An instance was created. Category: {category_name}"
+                return f"Categoria criada: {category_name}"
 
-        except SQLAlchemyError as error:
-            error_message = f"Error creating budget entry: {error}"
+        except IntegrityError as error:
+            error_message = f"Erro ao criar categoria: {error}"
             self.logger.error(error_message)
-            raise SpendRepositoryError(error_message)
+            raise SpendIntegrityRepositoryError(error_message)
+
+        except Exception as error:
+            message = "Erro inesperado ao criar categoria"
+            self.logger.error(f"{message}: {error}")
+            raise SpendRepositoryError(f"{message}: {error}")
 
     def update(self, data: dict) -> str:
         """
@@ -72,54 +75,60 @@ class SpendLimitRepository(BaseRepository):
             str: Confirmation message.
         """
         try:
+            category_name = data.get("category_name")
             with Session(bind=engine, expire_on_commit=False) as session:
                 entry = (
                     session.query(DimensionSpendFinance)
-                    .filter(DimensionSpendFinance.category_name == data.get("category_name"))
+                    .filter(DimensionSpendFinance.category_name == category_name)
                     .first()
                 )
-
                 if not entry:
-                    raise SpendRepositoryError("Category not found for update.")
+                    message = f"Categoria '{category_name}' não encontrada "
+                    self.logger.error(message)
+                    raise NotFoundError(message)
+
 
                 data["category_id"] = entry.category_id
                 session.query(DimensionSpendFinance).filter_by(category_id=entry.category_id).update(data)
                 session.commit()
 
-                return f"Budget updated: {data}"
+                return f"Limite de gastos ({data.get("category_name")}) atualizado: {data.get("budget")}"
 
         except SQLAlchemyError as error:
-            error_message = f"Error updating budget: {error}"
+            error_message = f"Erro ao atualizar limite de gastos: {error}"
             self.logger.error(error_message)
             raise SpendRepositoryError(error_message)
 
     def delete(self, data: dict) -> str:
         """
-        Delete a spend limit entry.
 
+        Delete a spend limit entry.
         Args:
-            data (dict): Contains the category_name to delete.
+        data (dict): Contains the category_name to delete.
 
         Returns:
             str: Confirmation message.
         """
         try:
+            category_name = data.get("category_name")
             with Session(bind=engine, expire_on_commit=False) as session:
                 entry = (
                     session.query(DimensionSpendFinance)
-                    .filter(DimensionSpendFinance.category_name == data.get("category_name"))
+                    .filter(DimensionSpendFinance.category_name == category_name)
                     .first()
                 )
 
                 if not entry:
-                    raise NotFoundError("Category not found for deletion.")
+                    message = f"Categoria '{category_name}' não encontrada "
+                    self.logger.error(message)
+                    raise NotFoundError(message)
 
                 session.delete(entry)
                 session.commit()
 
-                return f"Budget deleted: {data}"
+                return f"Limite de gastos deletado: {category_name}"
 
         except SQLAlchemyError as error:
-            error_message = f"Error deleting budget: {error}"
+            error_message = f"Erro ao deletar limite de gastos: {error}"
             self.logger.error(error_message)
             raise SpendRepositoryError(error_message)

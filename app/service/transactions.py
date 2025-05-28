@@ -14,7 +14,10 @@ class TransactionService(BaseService):
         return self.repository.get(items=items)
 
     def create(self, data: dict) -> str:
-        return self.repository.create(data=data)
+        # É responsabilidade do serviço validar se aquele ID informado pertence a uma
+        # categoria ja existente... e não do agente. Corrigir isso.
+        repository_response = self.repository.create(data=data)
+        return repository_response
 
     def update(self, data: dict) -> str:
         return self.repository.update(data=data)

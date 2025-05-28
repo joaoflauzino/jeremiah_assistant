@@ -12,13 +12,14 @@ from validation_schema.database.validate import (
     RegisterTransaction,
     RegisterUpdateTransaction,
 )
-from config.exceptions import NotFoundError, SpendServiceError
-from exceptions_handlers.handlers import not_found_error_handler, internal_server_error
+from config.exceptions import NotFoundError, SpendServiceError, SpendIntegrityServiceError
+from exceptions_handlers.handlers import not_found_error_handler, internal_server_error, duplicate_category
 
 app = FastAPI()
 
 app.add_exception_handler(NotFoundError, not_found_error_handler)
 app.add_exception_handler(SpendServiceError, internal_server_error)
+app.add_exception_handler(SpendIntegrityServiceError, duplicate_category)
 
 @app.get("/health")
 def root():
@@ -37,7 +38,7 @@ def add_budget(data: Register) -> str:
     data_decoded = jsonable_encoder(data)
     spend_service = SpendService()
     response_service = spend_service.create(data=data_decoded)
-    return f"Register was created: {response_service}"
+    return response_service
 
 
 @app.put("/dimension/budget", status_code=status.HTTP_201_CREATED)
@@ -45,7 +46,7 @@ def update_budget(data: Register) -> str:
     data_decoded = jsonable_encoder(data)
     spend_service = SpendService()
     response_service = spend_service.update(data=data_decoded)
-    return f"Register was updated: {response_service}"
+    return response_service
 
 
 @app.delete("/dimension/budget", status_code=status.HTTP_200_OK)
@@ -53,8 +54,7 @@ def delete_budget(data: Delete):
     data_decoded = jsonable_encoder(data)
     spend_service = SpendService()
     response_service = spend_service.delete(data=data_decoded)
-    return f"These registers were deleted: {response_service}"
-
+    return response_service
 
 @app.get("/transaction/budget", status_code=status.HTTP_200_OK)
 def read_spent(items: Union[List[Any]] = Query(default=[])) -> list | str:

@@ -19,6 +19,9 @@ def add_spent(category: str, value: float, tag: str, credit_card: str) -> str:
         f"Input category: {category}, Input value: {value}, Input tag: {tag}, Input credit card: {credit_card}"
     )
 
+    # É responsabilidade do serviço validar se aquele ID informado pertence a uma
+    # categoria ja existente... e não do agente. Corrigir isso.
+
     response_category_id = requests.get(
         url=f"{DATABASE_API_URL}/dimension/budget",
         params={"items": [category]},
